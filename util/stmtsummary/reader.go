@@ -19,6 +19,8 @@ import (
 	"strings"
 	"time"
 
+	"go.uber.org/zap"
+
 	"github.com/pingcap/tidb/parser/auth"
 	"github.com/pingcap/tidb/parser/model"
 	"github.com/pingcap/tidb/parser/mysql"
@@ -27,7 +29,6 @@ import (
 	"github.com/pingcap/tidb/util/logutil"
 	"github.com/pingcap/tidb/util/plancodec"
 	"github.com/pingcap/tidb/util/set"
-	"go.uber.org/zap"
 )
 
 // stmtSummaryReader uses to read the statement summaries data and convert to []datum row.
@@ -271,8 +272,8 @@ const (
 	MaxPrewriteTimeStr              = "MAX_PREWRITE_TIME"
 	AvgCommitTimeStr                = "AVG_COMMIT_TIME"
 	MaxCommitTimeStr                = "MAX_COMMIT_TIME"
-	AvgGetCommitTsTimeStr           = "AVG_GET_COMMIT_TS_TIME"
-	MaxGetCommitTsTimeStr           = "MAX_GET_COMMIT_TS_TIME"
+	AvgGetCommitTSTimeStr           = "AVG_GET_COMMIT_TS_TIME"
+	MaxGetCommitTSTimeStr           = "MAX_GET_COMMIT_TS_TIME"
 	AvgCommitBackoffTimeStr         = "AVG_COMMIT_BACKOFF_TIME"
 	MaxCommitBackoffTimeStr         = "MAX_COMMIT_BACKOFF_TIME"
 	AvgResolveLockTimeStr           = "AVG_RESOLVE_LOCK_TIME"
@@ -470,11 +471,11 @@ var columnValueFactoryMap = map[string]columnValueFactory{
 	MaxCommitTimeStr: func(ssElement *stmtSummaryByDigestElement, _ *stmtSummaryByDigest) interface{} {
 		return int64(ssElement.maxCommitTime)
 	},
-	AvgGetCommitTsTimeStr: func(ssElement *stmtSummaryByDigestElement, _ *stmtSummaryByDigest) interface{} {
-		return avgInt(int64(ssElement.sumGetCommitTsTime), ssElement.commitCount)
+	AvgGetCommitTSTimeStr: func(ssElement *stmtSummaryByDigestElement, _ *stmtSummaryByDigest) interface{} {
+		return avgInt(int64(ssElement.sumGetCommitTSTime), ssElement.commitCount)
 	},
-	MaxGetCommitTsTimeStr: func(ssElement *stmtSummaryByDigestElement, _ *stmtSummaryByDigest) interface{} {
-		return int64(ssElement.maxGetCommitTsTime)
+	MaxGetCommitTSTimeStr: func(ssElement *stmtSummaryByDigestElement, _ *stmtSummaryByDigest) interface{} {
+		return int64(ssElement.maxGetCommitTSTime)
 	},
 	AvgCommitBackoffTimeStr: func(ssElement *stmtSummaryByDigestElement, _ *stmtSummaryByDigest) interface{} {
 		return avgInt(ssElement.sumCommitBackoffTime, ssElement.commitCount)

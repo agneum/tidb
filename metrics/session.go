@@ -139,7 +139,7 @@ const (
 	LblAbort       = "abort"
 	LblRollback    = "rollback"
 	LblType        = "type"
-	LblDb          = "db"
+	LblDB          = "db"
 	LblResult      = "result"
 	LblSQLType     = "sql_type"
 	LblGeneral     = "general"

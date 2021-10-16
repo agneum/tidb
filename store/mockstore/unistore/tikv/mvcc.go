@@ -1364,7 +1364,7 @@ func (store *MVCCStore) MvccGetByStartTs(reqCtx *requestCtx, startTs uint64) (*k
 	reader := reqCtx.getDBReader()
 	startKey := reqCtx.regCtx.RawStart()
 	endKey := reqCtx.regCtx.RawEnd()
-	rawKey, err := reader.GetKeyByStartTs(startKey, endKey, startTs)
+	rawKey, err := reader.GetKeyByStartTS(startKey, endKey, startTs)
 	if err != nil {
 		return nil, nil, err
 	}

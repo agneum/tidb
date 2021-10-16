@@ -27,6 +27,9 @@ import (
 	"testing"
 	"time"
 
+	"github.com/tikv/client-go/v2/oracle"
+	"go.uber.org/zap/zapcore"
+
 	"github.com/pingcap/log"
 	"github.com/pingcap/tidb/executor/aggfuncs"
 	"github.com/pingcap/tidb/expression"
@@ -34,7 +37,6 @@ import (
 	"github.com/pingcap/tidb/parser/ast"
 	"github.com/pingcap/tidb/parser/mysql"
 	"github.com/pingcap/tidb/planner/core"
-	plannercore "github.com/pingcap/tidb/planner/core"
 	"github.com/pingcap/tidb/planner/property"
 	"github.com/pingcap/tidb/planner/util"
 	"github.com/pingcap/tidb/sessionctx"
@@ -46,8 +48,6 @@ import (
 	"github.com/pingcap/tidb/util/memory"
 	"github.com/pingcap/tidb/util/mock"
 	"github.com/pingcap/tidb/util/stringutil"
-	"github.com/tikv/client-go/v2/oracle"
-	"go.uber.org/zap/zapcore"
 )
 
 var (
@@ -568,8 +568,8 @@ func buildWindowExecutor(ctx sessionctx.Context, windowFunc string, funcs int, f
 
 		plan = core.PhysicalShuffle{
 			Concurrency:  concurrency,
-			Tails:        []plannercore.PhysicalPlan{tail},
-			DataSources:  []plannercore.PhysicalPlan{src},
+			Tails:        []core.PhysicalPlan{tail},
+			DataSources:  []core.PhysicalPlan{src},
 			SplitterType: core.PartitionHashSplitterType,
 			ByItemArrays: [][]expression.Expression{byItems},
 		}.Init(ctx, nil, 0)

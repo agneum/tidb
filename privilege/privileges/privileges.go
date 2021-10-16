@@ -22,6 +22,8 @@ import (
 	"strings"
 	"sync"
 
+	"go.uber.org/zap"
+
 	"github.com/pingcap/tidb/infoschema"
 	"github.com/pingcap/tidb/infoschema/perfschema"
 	"github.com/pingcap/tidb/parser/auth"
@@ -32,7 +34,6 @@ import (
 	"github.com/pingcap/tidb/util"
 	"github.com/pingcap/tidb/util/logutil"
 	"github.com/pingcap/tidb/util/sem"
-	"go.uber.org/zap"
 )
 
 // SkipWithGrant causes the server to start without using the privilege system at all.
@@ -238,7 +239,7 @@ func (p *UserPrivileges) GetAuthPlugin(user, host string) (string, error) {
 	mysqlPriv := p.Handle.Get()
 	record := mysqlPriv.connectionVerification(user, host)
 	if record == nil {
-		return "", errors.New("Failed to get user record")
+		return "", errors.New("failed to get user record")
 	}
 	if len(record.AuthenticationString) == 0 {
 		return "", nil
@@ -246,7 +247,7 @@ func (p *UserPrivileges) GetAuthPlugin(user, host string) (string, error) {
 	if p.isValidHash(record) {
 		return record.AuthPlugin, nil
 	}
-	return "", errors.New("Failed to get plugin for user")
+	return "", errors.New("failed to get plugin for user")
 }
 
 // GetAuthWithoutVerification implements the Manager interface.

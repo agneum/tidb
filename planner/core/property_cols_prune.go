@@ -81,7 +81,7 @@ func (is *LogicalIndexScan) PreparePossibleProperties(schema *expression.Schema,
 }
 
 // PreparePossibleProperties implements LogicalPlan PreparePossibleProperties interface.
-func (p *TiKVSingleGather) PreparePossibleProperties(schema *expression.Schema, childrenProperties ...[][]*expression.Column) [][]*expression.Column {
+func (sg *TiKVSingleGather) PreparePossibleProperties(schema *expression.Schema, childrenProperties ...[][]*expression.Column) [][]*expression.Column {
 	return childrenProperties[0]
 }
 
@@ -103,8 +103,8 @@ func (p *LogicalWindow) PreparePossibleProperties(schema *expression.Schema, chi
 }
 
 // PreparePossibleProperties implements LogicalPlan PreparePossibleProperties interface.
-func (p *LogicalSort) PreparePossibleProperties(schema *expression.Schema, childrenProperties ...[][]*expression.Column) [][]*expression.Column {
-	propCols := getPossiblePropertyFromByItems(p.ByItems)
+func (ls *LogicalSort) PreparePossibleProperties(schema *expression.Schema, childrenProperties ...[][]*expression.Column) [][]*expression.Column {
+	propCols := getPossiblePropertyFromByItems(ls.ByItems)
 	if len(propCols) == 0 {
 		return nil
 	}
@@ -112,8 +112,8 @@ func (p *LogicalSort) PreparePossibleProperties(schema *expression.Schema, child
 }
 
 // PreparePossibleProperties implements LogicalPlan PreparePossibleProperties interface.
-func (p *LogicalTopN) PreparePossibleProperties(schema *expression.Schema, childrenProperties ...[][]*expression.Column) [][]*expression.Column {
-	propCols := getPossiblePropertyFromByItems(p.ByItems)
+func (lt *LogicalTopN) PreparePossibleProperties(schema *expression.Schema, childrenProperties ...[][]*expression.Column) [][]*expression.Column {
+	propCols := getPossiblePropertyFromByItems(lt.ByItems)
 	if len(propCols) == 0 {
 		return nil
 	}

@@ -78,7 +78,7 @@ func (c *CopClient) Send(ctx context.Context, req *kv.Request, variables interfa
 		logutil.BgLogger().Debug("send batch requests")
 		return c.sendBatch(ctx, req, vars)
 	}
-	ctx = context.WithValue(ctx, tikv.TxnStartKey(), req.StartTs)
+	ctx = context.WithValue(ctx, tikv.TxnStartKey(), req.StartTS)
 	bo := backoff.NewBackofferWithVars(ctx, copBuildTaskMaxBackoff, vars)
 	ranges := NewKeyRanges(req.KeyRanges)
 	tasks, err := buildCopTasks(bo, c.store.GetRegionCache(), ranges, req, eventCb)
@@ -605,7 +605,7 @@ func (it *copIterator) Next(ctx context.Context) (kv.ResultSubset, error) {
 		return nil, errors.Trace(resp.err)
 	}
 
-	err := it.store.CheckVisibility(it.req.StartTs)
+	err := it.store.CheckVisibility(it.req.StartTS)
 	if err != nil {
 		return nil, errors.Trace(err)
 	}
@@ -675,7 +675,7 @@ func (worker *copIteratorWorker) handleTaskOnce(bo *Backoffer, task *copTask, ch
 
 	copReq := coprocessor.Request{
 		Tp:        worker.req.Tp,
-		StartTs:   worker.req.StartTs,
+		StartTs:   worker.req.StartTS,
 		Data:      worker.req.Data,
 		Ranges:    task.ranges.ToPBRanges(),
 		SchemaVer: worker.req.SchemaVar,
@@ -692,7 +692,7 @@ func (worker *copIteratorWorker) handleTaskOnce(bo *Backoffer, task *copTask, ch
 			cacheKey = cKey
 			cValue := worker.store.coprCache.Get(cKey)
 			copReq.IsCacheEnabled = true
-			if cValue != nil && cValue.RegionID == task.region.GetID() && cValue.TimeStamp <= worker.req.StartTs {
+			if cValue != nil && cValue.RegionID == task.region.GetID() && cValue.TimeStamp <= worker.req.StartTS {
 				// Append cache version to the request to skip Coprocessor computation if possible
 				// when request result is cached
 				copReq.CacheIfMatchVersion = cValue.RegionDataVersion
@@ -761,7 +761,7 @@ const (
 )
 
 func (worker *copIteratorWorker) logTimeCopTask(costTime time.Duration, task *copTask, bo *Backoffer, resp *tikvrpc.Response) {
-	logStr := fmt.Sprintf("[TIME_COP_PROCESS] resp_time:%s txnStartTS:%d region_id:%d store_addr:%s", costTime, worker.req.StartTs, task.region.GetID(), task.storeAddr)
+	logStr := fmt.Sprintf("[TIME_COP_PROCESS] resp_time:%s txnStartTS:%d region_id:%d store_addr:%s", costTime, worker.req.StartTS, task.region.GetID(), task.storeAddr)
 	if bo.GetTotalSleep() > minLogBackoffTime {
 		backoffTypes := strings.Replace(fmt.Sprintf("%v", bo.TiKVBackoffer().GetTypes()), " ", ",", -1)
 		logStr += fmt.Sprintf(" backoff_ms:%d backoff_types:%s", bo.GetTotalSleep(), backoffTypes)
@@ -897,7 +897,7 @@ func (worker *copIteratorWorker) handleCopResponse(bo *Backoffer, rpcCtx *tikv.R
 			logutil.Logger(bo.GetCtx()).Debug("coprocessor encounters lock",
 				zap.Stringer("lock", lockErr))
 		}
-		msBeforeExpired, err1 := worker.kvclient.ResolveLocks(bo.TiKVBackoffer(), worker.req.StartTs, []*txnlock.Lock{txnlock.NewLock(lockErr)})
+		msBeforeExpired, err1 := worker.kvclient.ResolveLocks(bo.TiKVBackoffer(), worker.req.StartTS, []*txnlock.Lock{txnlock.NewLock(lockErr)})
 		err1 = derr.ToTiDBErr(err1)
 		if err1 != nil {
 			return nil, errors.Trace(err1)
@@ -912,7 +912,7 @@ func (worker *copIteratorWorker) handleCopResponse(bo *Backoffer, rpcCtx *tikv.R
 	if otherErr := resp.pbResp.GetOtherError(); otherErr != "" {
 		err := errors.Errorf("other error: %s", otherErr)
 		logutil.Logger(bo.GetCtx()).Warn("other error",
-			zap.Uint64("txnStartTS", worker.req.StartTs),
+			zap.Uint64("txnStartTS", worker.req.StartTS),
 			zap.Uint64("regionID", task.region.GetID()),
 			zap.String("storeAddr", task.storeAddr),
 			zap.Error(err))
@@ -982,7 +982,7 @@ func (worker *copIteratorWorker) handleCopResponse(bo *Backoffer, rpcCtx *tikv.R
 
 				newCacheValue := coprCacheValue{
 					Data:              data,
-					TimeStamp:         worker.req.StartTs,
+					TimeStamp:         worker.req.StartTS,
 					RegionID:          task.region.GetID(),
 					RegionDataVersion: resp.pbResp.CacheLastVersion,
 				}

@@ -411,7 +411,7 @@ func (c *CopClient) sendBatch(ctx context.Context, req *kv.Request, vars *tikv.V
 	if req.KeepOrder || req.Desc {
 		return copErrorResponse{errors.New("batch coprocessor cannot prove keep order or desc property")}
 	}
-	ctx = context.WithValue(ctx, tikv.TxnStartKey(), req.StartTs)
+	ctx = context.WithValue(ctx, tikv.TxnStartKey(), req.StartTS)
 	bo := backoff.NewBackofferWithVars(ctx, copBuildTaskMaxBackoff, vars)
 	ranges := NewKeyRanges(req.KeyRanges)
 	tasks, err := buildBatchCopTasks(bo, c.store.kvStore, ranges, req.StoreType, nil, 0)
@@ -489,7 +489,7 @@ func (b *batchCopIterator) Next(ctx context.Context) (kv.ResultSubset, error) {
 		return nil, errors.Trace(resp.err)
 	}
 
-	err := b.store.CheckVisibility(b.req.StartTs)
+	err := b.store.CheckVisibility(b.req.StartTS)
 	if err != nil {
 		return nil, errors.Trace(err)
 	}
@@ -576,7 +576,7 @@ func (b *batchCopIterator) handleTaskOnce(ctx context.Context, bo *backoff.Backo
 
 	copReq := coprocessor.BatchRequest{
 		Tp:        b.req.Tp,
-		StartTs:   b.req.StartTs,
+		StartTs:   b.req.StartTS,
 		Data:      b.req.Data,
 		SchemaVer: b.req.SchemaVar,
 		Regions:   regionInfos,
@@ -644,7 +644,7 @@ func (b *batchCopIterator) handleBatchCopResponse(bo *Backoffer, response *copro
 	if otherErr := response.GetOtherError(); otherErr != "" {
 		err = errors.Errorf("other error: %s", otherErr)
 		logutil.BgLogger().Warn("other error",
-			zap.Uint64("txnStartTS", b.req.StartTs),
+			zap.Uint64("txnStartTS", b.req.StartTS),
 			zap.String("storeAddr", task.storeAddr),
 			zap.Error(err))
 		return errors.Trace(err)

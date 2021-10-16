@@ -21,8 +21,9 @@ import (
 
 	"github.com/pingcap/kvproto/pkg/deadlock"
 	"github.com/pingcap/log"
-	"github.com/pingcap/tidb/store/mockstore/unistore/config"
 	"go.uber.org/zap"
+
+	"github.com/pingcap/tidb/store/mockstore/unistore/config"
 )
 
 // LockNoWait is used for pessimistic lock wait time
@@ -81,7 +82,7 @@ type Waiter struct {
 	startTS             uint64
 	LockTS              uint64
 	KeyHash             uint64
-	CommitTs            uint64
+	CommitTS            uint64
 	wakeupDelayed       bool
 }
 
@@ -110,12 +111,12 @@ func (w *Waiter) Wait() WaitResult {
 		select {
 		case <-w.timer.C:
 			if w.wakeupDelayed {
-				return WaitResult{WakeupSleepTime: WakeupDelayTimeout, CommitTS: w.CommitTs}
+				return WaitResult{WakeupSleepTime: WakeupDelayTimeout, CommitTS: w.CommitTS}
 			}
 			return WaitResult{WakeupSleepTime: WaitTimeout}
 		case result := <-w.ch:
 			if result.WakeupSleepTime == WakeupDelayTimeout {
-				w.CommitTs = result.CommitTS
+				w.CommitTS = result.CommitTS
 				w.wakeupDelayed = true
 				delaySleepDuration := time.Duration(w.wakeUpDelayDuration) * time.Millisecond
 				if time.Now().Add(delaySleepDuration).Before(w.deadlineTime) {

@@ -19,6 +19,9 @@ import (
 
 	"github.com/cznic/mathutil"
 	"github.com/pingcap/errors"
+	"github.com/pingcap/tipb/go-tipb"
+	"go.uber.org/zap"
+
 	"github.com/pingcap/tidb/config"
 	"github.com/pingcap/tidb/expression"
 	"github.com/pingcap/tidb/expression/aggregation"
@@ -36,8 +39,6 @@ import (
 	"github.com/pingcap/tidb/util/collate"
 	"github.com/pingcap/tidb/util/logutil"
 	"github.com/pingcap/tidb/util/plancodec"
-	"github.com/pingcap/tipb/go-tipb"
-	"go.uber.org/zap"
 )
 
 var (
@@ -1419,19 +1420,19 @@ func (p *PhysicalUnionAll) attach2Task(tasks ...task) task {
 	return t
 }
 
-func (sel *PhysicalSelection) attach2Task(tasks ...task) task {
-	sessVars := sel.ctx.GetSessionVars()
+func (p *PhysicalSelection) attach2Task(tasks ...task) task {
+	sessVars := p.ctx.GetSessionVars()
 	if mppTask, _ := tasks[0].(*mppTask); mppTask != nil { // always push to mpp task.
-		sc := sel.ctx.GetSessionVars().StmtCtx
-		if expression.CanExprsPushDown(sc, sel.Conditions, sel.ctx.GetClient(), kv.TiFlash) {
-			sel.cost = mppTask.cost()
-			return attachPlan2Task(sel, mppTask.copy())
+		sc := p.ctx.GetSessionVars().StmtCtx
+		if expression.CanExprsPushDown(sc, p.Conditions, p.ctx.GetClient(), kv.TiFlash) {
+			p.cost = mppTask.cost()
+			return attachPlan2Task(p, mppTask.copy())
 		}
 	}
-	t := tasks[0].convertToRootTask(sel.ctx)
+	t := tasks[0].convertToRootTask(p.ctx)
 	t.addCost(t.count() * sessVars.CPUFactor)
-	sel.cost = t.cost()
-	return attachPlan2Task(sel, t)
+	p.cost = t.cost()
+	return attachPlan2Task(p, t)
 }
 
 // CheckAggCanPushCop checks whether the aggFuncs and groupByItems can

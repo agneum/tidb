@@ -22,6 +22,10 @@ import (
 	"sync/atomic"
 	"time"
 
+	"github.com/tikv/client-go/v2/util"
+	atomic2 "go.uber.org/atomic"
+	"go.uber.org/zap"
+
 	"github.com/pingcap/tidb/parser"
 	"github.com/pingcap/tidb/parser/model"
 	"github.com/pingcap/tidb/parser/mysql"
@@ -29,9 +33,6 @@ import (
 	"github.com/pingcap/tidb/util/execdetails"
 	"github.com/pingcap/tidb/util/memory"
 	"github.com/pingcap/tidb/util/resourcegrouptag"
-	"github.com/tikv/client-go/v2/util"
-	atomic2 "go.uber.org/atomic"
-	"go.uber.org/zap"
 )
 
 const (
@@ -221,8 +222,8 @@ func (sh *StmtHints) TaskMapNeedBackUp() bool {
 type StmtCacheKey int
 
 const (
-	// StmtNowTsCacheKey is a variable for now/current_timestamp calculation/cache of one stmt.
-	StmtNowTsCacheKey StmtCacheKey = iota
+	// StmtNowTSCacheKey is a variable for now/current_timestamp calculation/cache of one stmt.
+	StmtNowTSCacheKey StmtCacheKey = iota
 	// StmtSafeTSCacheKey is a variable for safeTS calculation/cache of one stmt.
 	StmtSafeTSCacheKey
 )

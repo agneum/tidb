@@ -93,7 +93,7 @@ func TestBindingSymbolList(t *testing.T) {
 	require.Equal(t, "select `a` , `b` from `test` . `t` where `a` = ? limit ...", bindData.OriginalSQL)
 	bind := bindData.Bindings[0]
 	require.Equal(t, "SELECT `a`,`b` FROM `test`.`t` USE INDEX (`ib`) WHERE `a` = 1 LIMIT 0,1", bind.BindSQL)
-	require.Equal(t, "test", bindData.Db)
+	require.Equal(t, "test", bindData.DB)
 	require.Equal(t, "using", bind.Status)
 	require.NotNil(t, bind.Charset)
 	require.NotNil(t, bind.Collation)
@@ -185,7 +185,7 @@ func TestBestPlanInBaselines(t *testing.T) {
 	require.Equal(t, "select `a` , `b` from `test` . `t` where `a` = ? limit ...", bindData.OriginalSQL)
 	bind := bindData.Bindings[0]
 	require.Equal(t, "SELECT /*+ use_index(@`sel_1` `test`.`t` `ia`)*/ `a`,`b` FROM `test`.`t` WHERE `a` = 1 LIMIT 0,1", bind.BindSQL)
-	require.Equal(t, "test", bindData.Db)
+	require.Equal(t, "test", bindData.DB)
 	require.Equal(t, "using", bind.Status)
 
 	tk.MustQuery("select a, b from t where a = 3 limit 1, 10")
@@ -219,7 +219,7 @@ func TestErrorBind(t *testing.T) {
 	require.Equal(t, "select * from `test` . `t` where `i` > ?", bindData.OriginalSQL)
 	bind := bindData.Bindings[0]
 	require.Equal(t, "SELECT * FROM `test`.`t` USE INDEX (`index_t`) WHERE `i` > 100", bind.BindSQL)
-	require.Equal(t, "test", bindData.Db)
+	require.Equal(t, "test", bindData.DB)
 	require.Equal(t, "using", bind.Status)
 	require.NotNil(t, bind.Charset)
 	require.NotNil(t, bind.Collation)

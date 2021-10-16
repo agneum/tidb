@@ -20,6 +20,8 @@ import (
 	"unsafe"
 
 	"github.com/pingcap/errors"
+	"github.com/pingcap/tipb/go-tipb"
+
 	"github.com/pingcap/tidb/expression"
 	"github.com/pingcap/tidb/expression/aggregation"
 	"github.com/pingcap/tidb/kv"
@@ -35,7 +37,6 @@ import (
 	"github.com/pingcap/tidb/types"
 	"github.com/pingcap/tidb/util/ranger"
 	"github.com/pingcap/tidb/util/stringutil"
-	"github.com/pingcap/tipb/go-tipb"
 )
 
 var (
@@ -391,39 +392,39 @@ type PhysicalIndexScan struct {
 }
 
 // Clone implements PhysicalPlan interface.
-func (p *PhysicalIndexScan) Clone() (PhysicalPlan, error) {
+func (is *PhysicalIndexScan) Clone() (PhysicalPlan, error) {
 	cloned := new(PhysicalIndexScan)
-	*cloned = *p
-	base, err := p.physicalSchemaProducer.cloneWithSelf(cloned)
+	*cloned = *is
+	base, err := is.physicalSchemaProducer.cloneWithSelf(cloned)
 	if err != nil {
 		return nil, err
 	}
 	cloned.physicalSchemaProducer = *base
-	cloned.AccessCondition = cloneExprs(p.AccessCondition)
-	if p.Table != nil {
-		cloned.Table = p.Table.Clone()
+	cloned.AccessCondition = cloneExprs(is.AccessCondition)
+	if is.Table != nil {
+		cloned.Table = is.Table.Clone()
 	}
-	if p.Index != nil {
-		cloned.Index = p.Index.Clone()
+	if is.Index != nil {
+		cloned.Index = is.Index.Clone()
 	}
-	cloned.IdxCols = cloneCols(p.IdxCols)
-	cloned.IdxColLens = make([]int, len(p.IdxColLens))
-	copy(cloned.IdxColLens, p.IdxColLens)
-	cloned.Ranges = cloneRanges(p.Ranges)
-	cloned.Columns = cloneColInfos(p.Columns)
-	if p.dataSourceSchema != nil {
-		cloned.dataSourceSchema = p.dataSourceSchema.Clone()
+	cloned.IdxCols = cloneCols(is.IdxCols)
+	cloned.IdxColLens = make([]int, len(is.IdxColLens))
+	copy(cloned.IdxColLens, is.IdxColLens)
+	cloned.Ranges = cloneRanges(is.Ranges)
+	cloned.Columns = cloneColInfos(is.Columns)
+	if is.dataSourceSchema != nil {
+		cloned.dataSourceSchema = is.dataSourceSchema.Clone()
 	}
-	if p.Hist != nil {
-		cloned.Hist = p.Hist.Copy()
+	if is.Hist != nil {
+		cloned.Hist = is.Hist.Copy()
 	}
 	return cloned, nil
 }
 
 // ExtractCorrelatedCols implements PhysicalPlan interface.
-func (p *PhysicalIndexScan) ExtractCorrelatedCols() []*expression.CorrelatedColumn {
-	corCols := make([]*expression.CorrelatedColumn, 0, len(p.AccessCondition))
-	for _, expr := range p.AccessCondition {
+func (is *PhysicalIndexScan) ExtractCorrelatedCols() []*expression.CorrelatedColumn {
+	corCols := make([]*expression.CorrelatedColumn, 0, len(is.AccessCondition))
+	for _, expr := range is.AccessCondition {
 		corCols = append(corCols, expression.ExtractCorColumns(expr)...)
 	}
 	return corCols
@@ -636,25 +637,25 @@ type PhysicalTopN struct {
 }
 
 // Clone implements PhysicalPlan interface.
-func (lt *PhysicalTopN) Clone() (PhysicalPlan, error) {
+func (p *PhysicalTopN) Clone() (PhysicalPlan, error) {
 	cloned := new(PhysicalTopN)
-	*cloned = *lt
-	base, err := lt.basePhysicalPlan.cloneWithSelf(cloned)
+	*cloned = *p
+	base, err := p.basePhysicalPlan.cloneWithSelf(cloned)
 	if err != nil {
 		return nil, err
 	}
 	cloned.basePhysicalPlan = *base
-	cloned.ByItems = make([]*util.ByItems, 0, len(lt.ByItems))
-	for _, it := range lt.ByItems {
+	cloned.ByItems = make([]*util.ByItems, 0, len(p.ByItems))
+	for _, it := range p.ByItems {
 		cloned.ByItems = append(cloned.ByItems, it.Clone())
 	}
 	return cloned, nil
 }
 
 // ExtractCorrelatedCols implements PhysicalPlan interface.
-func (lt *PhysicalTopN) ExtractCorrelatedCols() []*expression.CorrelatedColumn {
-	corCols := make([]*expression.CorrelatedColumn, 0, len(lt.ByItems))
-	for _, item := range lt.ByItems {
+func (p *PhysicalTopN) ExtractCorrelatedCols() []*expression.CorrelatedColumn {
+	corCols := make([]*expression.CorrelatedColumn, 0, len(p.ByItems))
+	for _, item := range p.ByItems {
 		corCols = append(corCols, expression.ExtractCorColumns(item.Expr)...)
 	}
 	return corCols
@@ -670,27 +671,27 @@ type PhysicalApply struct {
 }
 
 // Clone implements PhysicalPlan interface.
-func (la *PhysicalApply) Clone() (PhysicalPlan, error) {
+func (p *PhysicalApply) Clone() (PhysicalPlan, error) {
 	cloned := new(PhysicalApply)
-	base, err := la.PhysicalHashJoin.Clone()
+	base, err := p.PhysicalHashJoin.Clone()
 	if err != nil {
 		return nil, err
 	}
 	hj := base.(*PhysicalHashJoin)
 	cloned.PhysicalHashJoin = *hj
-	cloned.CanUseCache = la.CanUseCache
-	cloned.Concurrency = la.Concurrency
-	for _, col := range la.OuterSchema {
+	cloned.CanUseCache = p.CanUseCache
+	cloned.Concurrency = p.Concurrency
+	for _, col := range p.OuterSchema {
 		cloned.OuterSchema = append(cloned.OuterSchema, col.Clone().(*expression.CorrelatedColumn))
 	}
 	return cloned, nil
 }
 
 // ExtractCorrelatedCols implements PhysicalPlan interface.
-func (la *PhysicalApply) ExtractCorrelatedCols() []*expression.CorrelatedColumn {
-	corCols := la.PhysicalHashJoin.ExtractCorrelatedCols()
+func (p *PhysicalApply) ExtractCorrelatedCols() []*expression.CorrelatedColumn {
+	corCols := p.PhysicalHashJoin.ExtractCorrelatedCols()
 	for i := len(corCols) - 1; i >= 0; i-- {
-		if la.children[0].Schema().Contains(&corCols[i].Column) {
+		if p.children[0].Schema().Contains(&corCols[i].Column) {
 			corCols = append(corCols[:i], corCols[i+1:]...)
 		}
 	}
@@ -1138,23 +1139,23 @@ type PhysicalSort struct {
 }
 
 // Clone implements PhysicalPlan interface.
-func (ls *PhysicalSort) Clone() (PhysicalPlan, error) {
+func (p *PhysicalSort) Clone() (PhysicalPlan, error) {
 	cloned := new(PhysicalSort)
-	base, err := ls.basePhysicalPlan.cloneWithSelf(cloned)
+	base, err := p.basePhysicalPlan.cloneWithSelf(cloned)
 	if err != nil {
 		return nil, err
 	}
 	cloned.basePhysicalPlan = *base
-	for _, it := range ls.ByItems {
+	for _, it := range p.ByItems {
 		cloned.ByItems = append(cloned.ByItems, it.Clone())
 	}
 	return cloned, nil
 }
 
 // ExtractCorrelatedCols implements PhysicalPlan interface.
-func (ls *PhysicalSort) ExtractCorrelatedCols() []*expression.CorrelatedColumn {
-	corCols := make([]*expression.CorrelatedColumn, 0, len(ls.ByItems))
-	for _, item := range ls.ByItems {
+func (p *PhysicalSort) ExtractCorrelatedCols() []*expression.CorrelatedColumn {
+	corCols := make([]*expression.CorrelatedColumn, 0, len(p.ByItems))
+	for _, item := range p.ByItems {
 		corCols = append(corCols, expression.ExtractCorColumns(item.Expr)...)
 	}
 	return corCols
@@ -1191,16 +1192,16 @@ func (p *PhysicalUnionScan) ExtractCorrelatedCols() []*expression.CorrelatedColu
 }
 
 // IsPartition returns true and partition ID if it works on a partition.
-func (p *PhysicalIndexScan) IsPartition() (bool, int64) {
-	return p.isPartition, p.physicalTableID
+func (is *PhysicalIndexScan) IsPartition() (bool, int64) {
+	return is.isPartition, is.physicalTableID
 }
 
 // IsPointGetByUniqueKey checks whether is a point get by unique key.
-func (p *PhysicalIndexScan) IsPointGetByUniqueKey(sc *stmtctx.StatementContext) bool {
-	return len(p.Ranges) == 1 &&
-		p.Index.Unique &&
-		len(p.Ranges[0].LowVal) == len(p.Index.Columns) &&
-		p.Ranges[0].IsPoint(sc)
+func (is *PhysicalIndexScan) IsPointGetByUniqueKey(sc *stmtctx.StatementContext) bool {
+	return len(is.Ranges) == 1 &&
+		is.Index.Unique &&
+		len(is.Ranges[0].LowVal) == len(is.Index.Columns) &&
+		is.Ranges[0].IsPoint(sc)
 }
 
 // PhysicalSelection represents a filter.

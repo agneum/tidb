@@ -199,13 +199,13 @@ func CheckRestoreDBAndTable(client *restore.Client, cfg *RestoreConfig) error {
 	restoreTables := cfg.Tables
 	for schema := range restoreSchemas {
 		if _, ok := schemasMap[schema]; !ok {
-			return errors.Annotatef(berrors.ErrUndefinedRestoreDbOrTable,
+			return errors.Annotatef(berrors.ErrUndefinedRestoreDBOrTable,
 				"[database: %v] has not been backup, please ensure you has input a correct database name", schema)
 		}
 	}
 	for table := range restoreTables {
 		if _, ok := tablesMap[table]; !ok {
-			return errors.Annotatef(berrors.ErrUndefinedRestoreDbOrTable,
+			return errors.Annotatef(berrors.ErrUndefinedRestoreDBOrTable,
 				"[table: %v] has not been backup, please ensure you has input a correct table name", table)
 		}
 	}

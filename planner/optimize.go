@@ -25,6 +25,9 @@ import (
 
 	"github.com/pingcap/errors"
 	"github.com/pingcap/failpoint"
+
+	"go.uber.org/zap"
+
 	"github.com/pingcap/tidb/bindinfo"
 	"github.com/pingcap/tidb/domain"
 	"github.com/pingcap/tidb/infoschema"
@@ -33,7 +36,6 @@ import (
 	"github.com/pingcap/tidb/parser"
 	"github.com/pingcap/tidb/parser/ast"
 	"github.com/pingcap/tidb/planner/cascades"
-	"github.com/pingcap/tidb/planner/core"
 	plannercore "github.com/pingcap/tidb/planner/core"
 	"github.com/pingcap/tidb/privilege"
 	"github.com/pingcap/tidb/sessionctx"
@@ -43,7 +45,6 @@ import (
 	"github.com/pingcap/tidb/util/hint"
 	"github.com/pingcap/tidb/util/logutil"
 	utilparser "github.com/pingcap/tidb/util/parser"
-	"go.uber.org/zap"
 )
 
 // GetPreparedStmt extract the prepared statement from the execute statement.
@@ -88,7 +89,7 @@ func GetExecuteForUpdateReadIS(node ast.Node, sctx sessionctx.Context) infoschem
 			execID = vars.PreparedStmtNameToID[execStmt.Name]
 		}
 		if preparedPointer, ok := vars.PreparedStmts[execID]; ok {
-			if preparedObj, ok := preparedPointer.(*core.CachedPrepareStmt); ok && preparedObj.ForUpdateRead {
+			if preparedObj, ok := preparedPointer.(*plannercore.CachedPrepareStmt); ok && preparedObj.ForUpdateRead {
 				return domain.GetDomain(sctx).InfoSchema()
 			}
 		}
@@ -185,7 +186,7 @@ func Optimize(ctx context.Context, sctx sessionctx.Context, node ast.Node, is in
 				binding.Status = bindinfo.Invalid
 				handleInvalidBindRecord(ctx, sctx, scope, bindinfo.BindRecord{
 					OriginalSQL: bindRecord.OriginalSQL,
-					Db:          bindRecord.Db,
+					DB:          bindRecord.DB,
 					Bindings:    []bindinfo.Binding{binding},
 				})
 				continue
@@ -358,7 +359,7 @@ func optimize(ctx context.Context, sctx sessionctx.Context, node ast.Node, is in
 			return nil, nil, 0, err
 		}
 		if !allowed {
-			return nil, nil, 0, errors.Trace(core.ErrSQLInReadOnlyMode)
+			return nil, nil, 0, errors.Trace(plannercore.ErrSQLInReadOnlyMode)
 		}
 	}
 
@@ -465,7 +466,7 @@ func getBindRecord(ctx sessionctx.Context, stmt ast.StmtNode) (*bindinfo.BindRec
 
 func handleInvalidBindRecord(ctx context.Context, sctx sessionctx.Context, level string, bindRecord bindinfo.BindRecord) {
 	sessionHandle := sctx.Value(bindinfo.SessionBindInfoKeyType).(*bindinfo.SessionHandle)
-	err := sessionHandle.DropBindRecord(bindRecord.OriginalSQL, bindRecord.Db, &bindRecord.Bindings[0])
+	err := sessionHandle.DropBindRecord(bindRecord.OriginalSQL, bindRecord.DB, &bindRecord.Bindings[0])
 	if err != nil {
 		logutil.Logger(ctx).Info("drop session bindings failed")
 	}
@@ -478,7 +479,7 @@ func handleInvalidBindRecord(ctx context.Context, sctx sessionctx.Context, level
 }
 
 func handleEvolveTasks(ctx context.Context, sctx sessionctx.Context, br *bindinfo.BindRecord, stmtNode ast.StmtNode, planHint string) {
-	bindSQL := bindinfo.GenerateBindSQL(ctx, stmtNode, planHint, false, br.Db)
+	bindSQL := bindinfo.GenerateBindSQL(ctx, stmtNode, planHint, false, br.DB)
 	if bindSQL == "" {
 		return
 	}
@@ -491,7 +492,7 @@ func handleEvolveTasks(ctx context.Context, sctx sessionctx.Context, br *bindinf
 		Source:    bindinfo.Evolve,
 	}
 	globalHandle := domain.GetDomain(sctx).BindHandle()
-	globalHandle.AddEvolvePlanTask(br.OriginalSQL, br.Db, binding)
+	globalHandle.AddEvolvePlanTask(br.OriginalSQL, br.DB, binding)
 }
 
 // useMaxTS returns true when meets following conditions:

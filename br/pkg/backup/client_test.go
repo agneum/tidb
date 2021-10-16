@@ -11,6 +11,12 @@ import (
 	. "github.com/pingcap/check"
 	backuppb "github.com/pingcap/kvproto/pkg/brpb"
 	"github.com/pingcap/kvproto/pkg/errorpb"
+	"github.com/tikv/client-go/v2/oracle"
+	"github.com/tikv/client-go/v2/testutils"
+	"github.com/tikv/client-go/v2/tikv"
+	"github.com/tikv/client-go/v2/txnkv/txnlock"
+	pd "github.com/tikv/pd/client"
+
 	"github.com/pingcap/tidb/br/pkg/backup"
 	"github.com/pingcap/tidb/br/pkg/conn"
 	"github.com/pingcap/tidb/br/pkg/pdutil"
@@ -20,11 +26,6 @@ import (
 	"github.com/pingcap/tidb/tablecodec"
 	"github.com/pingcap/tidb/types"
 	"github.com/pingcap/tidb/util/codec"
-	"github.com/tikv/client-go/v2/oracle"
-	"github.com/tikv/client-go/v2/testutils"
-	"github.com/tikv/client-go/v2/tikv"
-	"github.com/tikv/client-go/v2/txnkv/txnlock"
-	pd "github.com/tikv/pd/client"
 )
 
 type testBackup struct {
@@ -151,10 +152,10 @@ func (r *testBackup) TestBuildTableRangeCommonHandle(c *C) {
 		ids []int64
 		trs []kv.KeyRange
 	}
-	low, err_l := codec.EncodeKey(nil, nil, []types.Datum{types.MinNotNullDatum()}...)
-	c.Assert(err_l, IsNil)
-	high, err_h := codec.EncodeKey(nil, nil, []types.Datum{types.MaxValueDatum()}...)
-	c.Assert(err_h, IsNil)
+	low, errL := codec.EncodeKey(nil, nil, []types.Datum{types.MinNotNullDatum()}...)
+	c.Assert(errL, IsNil)
+	high, errH := codec.EncodeKey(nil, nil, []types.Datum{types.MaxValueDatum()}...)
+	c.Assert(errH, IsNil)
 	high = kv.Key(high).PrefixNext()
 	cases := []Case{
 		{ids: []int64{1}, trs: []kv.KeyRange{
@@ -183,8 +184,8 @@ func (r *testBackup) TestBuildTableRangeCommonHandle(c *C) {
 	}
 
 	tbl := &model.TableInfo{ID: 7, IsCommonHandle: true}
-	ranges, err_r := backup.BuildTableRanges(tbl)
-	c.Assert(err_r, IsNil)
+	ranges, errR := backup.BuildTableRanges(tbl)
+	c.Assert(errR, IsNil)
 	c.Assert(ranges, DeepEquals, []kv.KeyRange{
 		{StartKey: tablecodec.EncodeRowKey(7, low), EndKey: tablecodec.EncodeRowKey(7, high)},
 	})
@@ -245,10 +246,10 @@ func (r *testBackup) TestSendCreds(c *C) {
 	}
 	_, err = storage.New(r.ctx, backend, opts)
 	c.Assert(err, IsNil)
-	access_key := backend.GetS3().AccessKey
-	c.Assert(access_key, Equals, "ab")
-	secret_access_key := backend.GetS3().SecretAccessKey
-	c.Assert(secret_access_key, Equals, "cd")
+	actualAccessKey := backend.GetS3().AccessKey
+	c.Assert(actualAccessKey, Equals, "ab")
+	actualSecretAccessKey := backend.GetS3().SecretAccessKey
+	c.Assert(actualSecretAccessKey, Equals, "cd")
 
 	backendOpt = storage.BackendOptions{
 		S3: storage.S3BackendOptions{
@@ -264,8 +265,8 @@ func (r *testBackup) TestSendCreds(c *C) {
 	}
 	_, err = storage.New(r.ctx, backend, opts)
 	c.Assert(err, IsNil)
-	access_key = backend.GetS3().AccessKey
-	c.Assert(access_key, Equals, "")
-	secret_access_key = backend.GetS3().SecretAccessKey
-	c.Assert(secret_access_key, Equals, "")
+	actualAccessKey = backend.GetS3().AccessKey
+	c.Assert(actualAccessKey, Equals, "")
+	actualSecretAccessKey = backend.GetS3().SecretAccessKey
+	c.Assert(actualSecretAccessKey, Equals, "")
 }

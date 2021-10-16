@@ -107,8 +107,8 @@ func TestAddStatement(t *testing.T) {
 		maxTotalKeys:         stmtExecInfo1.ExecDetail.ScanDetail.TotalKeys,
 		sumProcessedKeys:     stmtExecInfo1.ExecDetail.ScanDetail.ProcessedKeys,
 		maxProcessedKeys:     stmtExecInfo1.ExecDetail.ScanDetail.ProcessedKeys,
-		sumGetCommitTsTime:   stmtExecInfo1.ExecDetail.CommitDetail.GetCommitTsTime,
-		maxGetCommitTsTime:   stmtExecInfo1.ExecDetail.CommitDetail.GetCommitTsTime,
+		sumGetCommitTSTime:   stmtExecInfo1.ExecDetail.CommitDetail.GetCommitTsTime,
+		maxGetCommitTSTime:   stmtExecInfo1.ExecDetail.CommitDetail.GetCommitTsTime,
 		sumPrewriteTime:      stmtExecInfo1.ExecDetail.CommitDetail.PrewriteTime,
 		maxPrewriteTime:      stmtExecInfo1.ExecDetail.CommitDetail.PrewriteTime,
 		sumCommitTime:        stmtExecInfo1.ExecDetail.CommitDetail.CommitTime,
@@ -247,8 +247,8 @@ func TestAddStatement(t *testing.T) {
 	expectedSummaryElement.maxTotalKeys = stmtExecInfo2.ExecDetail.ScanDetail.TotalKeys
 	expectedSummaryElement.sumProcessedKeys += stmtExecInfo2.ExecDetail.ScanDetail.ProcessedKeys
 	expectedSummaryElement.maxProcessedKeys = stmtExecInfo2.ExecDetail.ScanDetail.ProcessedKeys
-	expectedSummaryElement.sumGetCommitTsTime += stmtExecInfo2.ExecDetail.CommitDetail.GetCommitTsTime
-	expectedSummaryElement.maxGetCommitTsTime = stmtExecInfo2.ExecDetail.CommitDetail.GetCommitTsTime
+	expectedSummaryElement.sumGetCommitTSTime += stmtExecInfo2.ExecDetail.CommitDetail.GetCommitTsTime
+	expectedSummaryElement.maxGetCommitTSTime = stmtExecInfo2.ExecDetail.CommitDetail.GetCommitTsTime
 	expectedSummaryElement.sumPrewriteTime += stmtExecInfo2.ExecDetail.CommitDetail.PrewriteTime
 	expectedSummaryElement.maxPrewriteTime = stmtExecInfo2.ExecDetail.CommitDetail.PrewriteTime
 	expectedSummaryElement.sumCommitTime += stmtExecInfo2.ExecDetail.CommitDetail.CommitTime
@@ -366,7 +366,7 @@ func TestAddStatement(t *testing.T) {
 	expectedSummaryElement.sumBackoffTime += stmtExecInfo3.ExecDetail.BackoffTime
 	expectedSummaryElement.sumTotalKeys += stmtExecInfo3.ExecDetail.ScanDetail.TotalKeys
 	expectedSummaryElement.sumProcessedKeys += stmtExecInfo3.ExecDetail.ScanDetail.ProcessedKeys
-	expectedSummaryElement.sumGetCommitTsTime += stmtExecInfo3.ExecDetail.CommitDetail.GetCommitTsTime
+	expectedSummaryElement.sumGetCommitTSTime += stmtExecInfo3.ExecDetail.CommitDetail.GetCommitTsTime
 	expectedSummaryElement.sumPrewriteTime += stmtExecInfo3.ExecDetail.CommitDetail.PrewriteTime
 	expectedSummaryElement.sumCommitTime += stmtExecInfo3.ExecDetail.CommitDetail.CommitTime
 	expectedSummaryElement.sumLocalLatchTime += stmtExecInfo3.ExecDetail.CommitDetail.LocalLatchTime
@@ -506,8 +506,8 @@ func matchStmtSummaryByDigest(first, second *stmtSummaryByDigest) bool {
 			ssElement1.maxTotalKeys != ssElement2.maxTotalKeys ||
 			ssElement1.sumProcessedKeys != ssElement2.sumProcessedKeys ||
 			ssElement1.maxProcessedKeys != ssElement2.maxProcessedKeys ||
-			ssElement1.sumGetCommitTsTime != ssElement2.sumGetCommitTsTime ||
-			ssElement1.maxGetCommitTsTime != ssElement2.maxGetCommitTsTime ||
+			ssElement1.sumGetCommitTSTime != ssElement2.sumGetCommitTSTime ||
+			ssElement1.maxGetCommitTSTime != ssElement2.maxGetCommitTSTime ||
 			ssElement1.sumPrewriteTime != ssElement2.sumPrewriteTime ||
 			ssElement1.maxPrewriteTime != ssElement2.maxPrewriteTime ||
 			ssElement1.sumCommitTime != ssElement2.sumCommitTime ||
@@ -693,8 +693,8 @@ func newStmtSummaryReaderForTest(ssMap *stmtSummaryByDigestMap) *stmtSummaryRead
 		MaxPrewriteTimeStr,
 		AvgCommitTimeStr,
 		MaxCommitTimeStr,
-		AvgGetCommitTsTimeStr,
-		MaxGetCommitTsTimeStr,
+		AvgGetCommitTSTimeStr,
+		MaxGetCommitTSTimeStr,
 		AvgCommitBackoffTimeStr,
 		MaxCommitBackoffTimeStr,
 		AvgResolveLockTimeStr,

@@ -22,7 +22,7 @@ import (
 )
 
 // TestConcurrentMap first inserts 1000 entries, then checks them
-func (cm *pkgTestSuite) TestConcurrentMap(c *C) {
+func (s *pkgTestSuite) TestConcurrentMap(c *C) {
 	m := newConcurrentMap()
 	const iterations = 1000
 	const mod = 111

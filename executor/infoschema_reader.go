@@ -1061,9 +1061,9 @@ func (e *memtableRetriever) dataForTiKVStoreStatus(ctx sessionctx.Context) (err 
 		row[13].SetFloat64(storeStat.Status.RegionWeight)
 		row[14].SetFloat64(storeStat.Status.RegionScore)
 		row[15].SetInt64(storeStat.Status.RegionSize)
-		startTs := types.NewTime(types.FromGoTime(storeStat.Status.StartTs), mysql.TypeDatetime, types.DefaultFsp)
+		startTs := types.NewTime(types.FromGoTime(storeStat.Status.StartTS), mysql.TypeDatetime, types.DefaultFsp)
 		row[16].SetMysqlTime(startTs)
-		lastHeartbeatTs := types.NewTime(types.FromGoTime(storeStat.Status.LastHeartbeatTs), mysql.TypeDatetime, types.DefaultFsp)
+		lastHeartbeatTs := types.NewTime(types.FromGoTime(storeStat.Status.LastHeartbeatTS), mysql.TypeDatetime, types.DefaultFsp)
 		row[17].SetMysqlTime(lastHeartbeatTs)
 		row[18].SetString(storeStat.Status.Uptime, mysql.DefaultCollationName)
 		if sem.IsEnabled() {
@@ -1554,7 +1554,7 @@ func (e *memtableRetriever) setDataForHotRegionByMetrics(metrics []helper.HotTab
 			row[4].SetNull()
 		}
 		row[0].SetInt64(tblIndex.TableID)
-		row[2].SetString(tblIndex.DbName, mysql.DefaultCollationName)
+		row[2].SetString(tblIndex.DBName, mysql.DefaultCollationName)
 		row[3].SetString(tblIndex.TableName, mysql.DefaultCollationName)
 		row[5].SetUint64(tblIndex.RegionID)
 		row[6].SetString(tp, mysql.DefaultCollationName)

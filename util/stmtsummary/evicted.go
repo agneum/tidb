@@ -315,9 +315,9 @@ func addInfo(addTo *stmtSummaryByDigestElement, addWith *stmtSummaryByDigestElem
 	if addTo.maxCommitTime < addWith.maxCommitTime {
 		addTo.maxCommitTime = addWith.maxCommitTime
 	}
-	addTo.sumGetCommitTsTime += addWith.sumGetCommitTsTime
-	if addTo.maxGetCommitTsTime < addWith.maxGetCommitTsTime {
-		addTo.maxGetCommitTsTime = addWith.maxGetCommitTsTime
+	addTo.sumGetCommitTSTime += addWith.sumGetCommitTSTime
+	if addTo.maxGetCommitTSTime < addWith.maxGetCommitTSTime {
+		addTo.maxGetCommitTSTime = addWith.maxGetCommitTSTime
 	}
 	addTo.sumCommitBackoffTime += addWith.sumCommitBackoffTime
 	if addTo.maxCommitBackoffTime < addWith.maxCommitBackoffTime {

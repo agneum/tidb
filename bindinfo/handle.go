@@ -24,6 +24,8 @@ import (
 	"sync/atomic"
 	"time"
 
+	"go.uber.org/zap"
+
 	"github.com/pingcap/tidb/metrics"
 	"github.com/pingcap/tidb/parser"
 	"github.com/pingcap/tidb/parser/ast"
@@ -42,7 +44,6 @@ import (
 	"github.com/pingcap/tidb/util/sqlexec"
 	"github.com/pingcap/tidb/util/stmtsummary"
 	"github.com/pingcap/tidb/util/timeutil"
-	"go.uber.org/zap"
 )
 
 // BindHandle is used to handle all global sql bind operations.
@@ -110,7 +111,7 @@ func NewBindHandle(ctx sessionctx.Context) *BindHandle {
 	handle.bindInfo.parser = parser.New()
 	handle.invalidBindRecordMap.Value.Store(make(map[string]*bindRecordUpdate))
 	handle.invalidBindRecordMap.flushFunc = func(record *BindRecord) error {
-		return handle.DropBindRecord(record.OriginalSQL, record.Db, &record.Bindings[0])
+		return handle.DropBindRecord(record.OriginalSQL, record.DB, &record.Bindings[0])
 	}
 	handle.pendingVerifyBindRecordMap.Value.Store(make(map[string]*bindRecordUpdate))
 	handle.pendingVerifyBindRecordMap.flushFunc = func(record *BindRecord) error {
@@ -168,14 +169,14 @@ func (h *BindHandle) Update(fullLoad bool) (err error) {
 			lastUpdateTime = meta.Bindings[0].UpdateTime
 		}
 
-		oldRecord := newCache.getBindRecord(hash, meta.OriginalSQL, meta.Db)
+		oldRecord := newCache.getBindRecord(hash, meta.OriginalSQL, meta.DB)
 		newRecord := merge(oldRecord, meta).removeDeletedBindings()
 		if len(newRecord.Bindings) > 0 {
 			newCache.setBindRecord(hash, newRecord)
 		} else {
 			newCache.removeDeletedBindRecord(hash, newRecord)
 		}
-		updateMetrics(metrics.ScopeGlobal, oldRecord, newCache.getBindRecord(hash, meta.OriginalSQL, meta.Db), true)
+		updateMetrics(metrics.ScopeGlobal, oldRecord, newCache.getBindRecord(hash, meta.OriginalSQL, meta.DB), true)
 	}
 	return nil
 }
@@ -188,7 +189,7 @@ func (h *BindHandle) CreateBindRecord(sctx sessionctx.Context, record *BindRecor
 		return err
 	}
 
-	record.Db = strings.ToLower(record.Db)
+	record.DB = strings.ToLower(record.DB)
 	h.bindInfo.Lock()
 	h.sctx.Lock()
 	defer func() {
@@ -224,9 +225,9 @@ func (h *BindHandle) CreateBindRecord(sctx sessionctx.Context, record *BindRecor
 
 	now := types.NewTime(types.FromGoTime(time.Now()), mysql.TypeTimestamp, 3)
 
-	updateTs := now.String()
+	updateTS := now.String()
 	_, err = exec.ExecuteInternal(context.TODO(), `UPDATE mysql.bind_info SET status = %?, update_time = %? WHERE original_sql = %? AND update_time < %?`,
-		deleted, updateTs, record.OriginalSQL, updateTs)
+		deleted, updateTS, record.OriginalSQL, updateTS)
 	if err != nil {
 		return err
 	}
@@ -239,7 +240,7 @@ func (h *BindHandle) CreateBindRecord(sctx sessionctx.Context, record *BindRecor
 		_, err = exec.ExecuteInternal(context.TODO(), `INSERT INTO mysql.bind_info VALUES (%?,%?, %?, %?, %?, %?, %?, %?, %?)`,
 			record.OriginalSQL,
 			record.Bindings[i].BindSQL,
-			record.Db,
+			record.DB,
 			record.Bindings[i].Status,
 			record.Bindings[i].CreateTime.String(),
 			record.Bindings[i].UpdateTime.String(),
@@ -261,8 +262,8 @@ func (h *BindHandle) AddBindRecord(sctx sessionctx.Context, record *BindRecord) 
 		return err
 	}
 
-	record.Db = strings.ToLower(record.Db)
-	oldRecord := h.GetBindRecord(parser.DigestNormalized(record.OriginalSQL).String(), record.OriginalSQL, record.Db)
+	record.DB = strings.ToLower(record.DB)
+	oldRecord := h.GetBindRecord(parser.DigestNormalized(record.OriginalSQL).String(), record.OriginalSQL, record.DB)
 	var duplicateBinding *Binding
 	if oldRecord != nil {
 		binding := oldRecord.FindBinding(record.Bindings[0].ID)
@@ -327,7 +328,7 @@ func (h *BindHandle) AddBindRecord(sctx sessionctx.Context, record *BindRecord) 
 		_, err = exec.ExecuteInternal(context.TODO(), `INSERT INTO mysql.bind_info VALUES (%?, %?, %?, %?, %?, %?, %?, %?, %?)`,
 			record.OriginalSQL,
 			record.Bindings[i].BindSQL,
-			record.Db,
+			record.DB,
 			record.Bindings[i].Status,
 			record.Bindings[i].CreateTime.String(),
 			record.Bindings[i].UpdateTime.String(),
@@ -369,7 +370,7 @@ func (h *BindHandle) DropBindRecord(originalSQL, db string, binding *Binding) (e
 			return
 		}
 
-		record := &BindRecord{OriginalSQL: originalSQL, Db: db}
+		record := &BindRecord{OriginalSQL: originalSQL, DB: db}
 		if binding != nil {
 			record.Bindings = append(record.Bindings, *binding)
 		}
@@ -381,14 +382,14 @@ func (h *BindHandle) DropBindRecord(originalSQL, db string, binding *Binding) (e
 		return err
 	}
 
-	updateTs := types.NewTime(types.FromGoTime(time.Now()), mysql.TypeTimestamp, 3).String()
+	updateTS := types.NewTime(types.FromGoTime(time.Now()), mysql.TypeTimestamp, 3).String()
 
 	if binding == nil {
 		_, err = exec.ExecuteInternal(context.TODO(), `UPDATE mysql.bind_info SET status = %?, update_time = %? WHERE original_sql = %? AND update_time < %? AND status != %?`,
-			deleted, updateTs, originalSQL, updateTs, deleted)
+			deleted, updateTS, originalSQL, updateTS, deleted)
 	} else {
 		_, err = exec.ExecuteInternal(context.TODO(), `UPDATE mysql.bind_info SET status = %?, update_time = %? WHERE original_sql = %? AND update_time < %? AND bind_sql = %? and status != %?`,
-			deleted, updateTs, originalSQL, updateTs, binding.BindSQL, deleted)
+			deleted, updateTS, originalSQL, updateTS, binding.BindSQL, deleted)
 	}
 
 	deleteRows = int(h.sctx.Context.GetSessionVars().StmtCtx.AffectedRows())
@@ -489,7 +490,7 @@ func (tmpMap *tmpBindRecordMap) flushToStore() {
 
 // Add puts a BindRecord into tmpBindRecordMap.
 func (tmpMap *tmpBindRecordMap) Add(bindRecord *BindRecord) {
-	key := bindRecord.OriginalSQL + ":" + bindRecord.Db + ":" + bindRecord.Bindings[0].ID
+	key := bindRecord.OriginalSQL + ":" + bindRecord.DB + ":" + bindRecord.Bindings[0].ID
 	if _, ok := tmpMap.Load().(map[string]*bindRecordUpdate)[key]; ok {
 		return
 	}
@@ -552,13 +553,13 @@ func (h *BindHandle) newBindRecord(row chunk.Row) (string, *BindRecord, error) {
 	}
 	bindRecord := &BindRecord{
 		OriginalSQL: row.GetString(0),
-		Db:          strings.ToLower(row.GetString(2)),
+		DB:          strings.ToLower(row.GetString(2)),
 		Bindings:    []Binding{hint},
 	}
 	hash := parser.DigestNormalized(bindRecord.OriginalSQL)
 	h.sctx.Lock()
 	defer h.sctx.Unlock()
-	h.sctx.GetSessionVars().CurrentDB = bindRecord.Db
+	h.sctx.GetSessionVars().CurrentDB = bindRecord.DB
 	err := bindRecord.prepareHints(h.sctx.Context)
 	return hash.String(), bindRecord, err
 }
@@ -567,7 +568,7 @@ func (h *BindHandle) newBindRecord(row chunk.Row) (string, *BindRecord, error) {
 // it will be overridden.
 func (h *BindHandle) setBindRecord(hash string, meta *BindRecord) {
 	newCache := h.bindInfo.Value.Load().(cache).copy()
-	oldRecord := newCache.getBindRecord(hash, meta.OriginalSQL, meta.Db)
+	oldRecord := newCache.getBindRecord(hash, meta.OriginalSQL, meta.DB)
 	newCache.setBindRecord(hash, meta)
 	h.bindInfo.Value.Store(newCache)
 	updateMetrics(metrics.ScopeGlobal, oldRecord, meta, false)
@@ -577,7 +578,7 @@ func (h *BindHandle) setBindRecord(hash string, meta *BindRecord) {
 // removed from the cache after this operation.
 func (h *BindHandle) appendBindRecord(hash string, meta *BindRecord) {
 	newCache := h.bindInfo.Value.Load().(cache).copy()
-	oldRecord := newCache.getBindRecord(hash, meta.OriginalSQL, meta.Db)
+	oldRecord := newCache.getBindRecord(hash, meta.OriginalSQL, meta.DB)
 	newRecord := merge(oldRecord, meta)
 	newCache.setBindRecord(hash, newRecord)
 	h.bindInfo.Value.Store(newCache)
@@ -587,10 +588,10 @@ func (h *BindHandle) appendBindRecord(hash string, meta *BindRecord) {
 // removeBindRecord removes the BindRecord from the cache.
 func (h *BindHandle) removeBindRecord(hash string, meta *BindRecord) {
 	newCache := h.bindInfo.Value.Load().(cache).copy()
-	oldRecord := newCache.getBindRecord(hash, meta.OriginalSQL, meta.Db)
+	oldRecord := newCache.getBindRecord(hash, meta.OriginalSQL, meta.DB)
 	newCache.removeDeletedBindRecord(hash, meta)
 	h.bindInfo.Value.Store(newCache)
-	updateMetrics(metrics.ScopeGlobal, oldRecord, newCache.getBindRecord(hash, meta.OriginalSQL, meta.Db), false)
+	updateMetrics(metrics.ScopeGlobal, oldRecord, newCache.getBindRecord(hash, meta.OriginalSQL, meta.DB), false)
 }
 
 // removeDeletedBindRecord removes the BindRecord which has same originSQL and db with specified BindRecord.
@@ -787,7 +788,7 @@ func (h *BindHandle) CaptureBaselines() {
 			Source:    Capture,
 		}
 		// We don't need to pass the `sctx` because the BindSQL has been validated already.
-		err = h.CreateBindRecord(nil, &BindRecord{OriginalSQL: normalizedSQL, Db: dbName, Bindings: []Binding{binding}})
+		err = h.CreateBindRecord(nil, &BindRecord{OriginalSQL: normalizedSQL, DB: dbName, Bindings: []Binding{binding}})
 		if err != nil {
 			logutil.BgLogger().Debug("[sql-bind] create bind record failed in baseline capture", zap.String("SQL", bindableStmt.Query), zap.Error(err))
 		}
@@ -911,7 +912,7 @@ func (e *paramMarkerChecker) Leave(in ast.Node) (ast.Node, bool) {
 func (h *BindHandle) AddEvolvePlanTask(originalSQL, DB string, binding Binding) {
 	br := &BindRecord{
 		OriginalSQL: originalSQL,
-		Db:          DB,
+		DB:          DB,
 		Bindings:    []Binding{binding},
 	}
 	h.pendingVerifyBindRecordMap.Add(br)
@@ -981,7 +982,7 @@ func (h *BindHandle) getOnePendingVerifyJob() (string, string, Binding) {
 		for _, bindRecord := range bindRecords {
 			for _, bind := range bindRecord.Bindings {
 				if bind.Status == PendingVerify {
-					return bindRecord.OriginalSQL, bindRecord.Db, bind
+					return bindRecord.OriginalSQL, bindRecord.DB, bind
 				}
 				if bind.Status != Rejected {
 					continue
@@ -993,7 +994,7 @@ func (h *BindHandle) getOnePendingVerifyJob() (string, string, Binding) {
 				}
 				// Rejected and retry it now.
 				if dur > nextVerifyDuration {
-					return bindRecord.OriginalSQL, bindRecord.Db, bind
+					return bindRecord.OriginalSQL, bindRecord.DB, bind
 				}
 			}
 		}
@@ -1101,7 +1102,7 @@ func (h *BindHandle) HandleEvolvePlanTask(sctx sessionctx.Context, adminEvolve b
 		binding.Status = Using
 	}
 	// We don't need to pass the `sctx` because the BindSQL has been validated already.
-	return h.AddBindRecord(nil, &BindRecord{OriginalSQL: originalSQL, Db: db, Bindings: []Binding{binding}})
+	return h.AddBindRecord(nil, &BindRecord{OriginalSQL: originalSQL, DB: db, Bindings: []Binding{binding}})
 }
 
 // Clear resets the bind handle. It is only used for test.

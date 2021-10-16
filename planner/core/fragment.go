@@ -74,7 +74,7 @@ func GenerateRootMPPTasks(ctx sessionctx.Context, startTs uint64, sender *Physic
 func (e *mppTaskGenerator) generateMPPTasks(s *PhysicalExchangeSender) ([]*Fragment, error) {
 	logutil.BgLogger().Info("Mpp will generate tasks", zap.String("plan", ToString(s)))
 	tidbTask := &kv.MPPTask{
-		StartTs: e.startTS,
+		StartTS: e.startTS,
 		ID:      -1,
 	}
 	_, frags, err := e.generateMPPTasksForExchangeSender(s)
@@ -108,7 +108,7 @@ func (e *mppTaskGenerator) constructMPPTasksByChildrenTasks(tasks []*kv.MPPTask)
 			mppTask := &kv.MPPTask{
 				Meta:    &mppAddr{addr: addr},
 				ID:      e.ctx.GetSessionVars().AllocMPPTaskID(e.startTS),
-				StartTs: e.startTS,
+				StartTS: e.startTS,
 				TableID: -1,
 			}
 			newTasks = append(newTasks, mppTask)
@@ -359,7 +359,7 @@ func (e *mppTaskGenerator) constructMPPTasksForSinglePartitionTable(ctx context.
 	}
 	tasks := make([]*kv.MPPTask, 0, len(metas))
 	for _, meta := range metas {
-		tasks = append(tasks, &kv.MPPTask{Meta: meta, ID: e.ctx.GetSessionVars().AllocMPPTaskID(e.startTS), StartTs: e.startTS, TableID: tableID})
+		tasks = append(tasks, &kv.MPPTask{Meta: meta, ID: e.ctx.GetSessionVars().AllocMPPTaskID(e.startTS), StartTS: e.startTS, TableID: tableID})
 	}
 	return tasks, nil
 }

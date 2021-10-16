@@ -23,13 +23,14 @@ import (
 	deadlockpb "github.com/pingcap/kvproto/pkg/deadlock"
 	"github.com/pingcap/kvproto/pkg/kvrpcpb"
 	"github.com/pingcap/kvproto/pkg/metapb"
+	tikvstore "github.com/tikv/client-go/v2/kv"
+	"github.com/tikv/client-go/v2/oracle"
+	"github.com/tikv/client-go/v2/tikv"
+
 	"github.com/pingcap/tidb/config"
 	"github.com/pingcap/tidb/parser/model"
 	"github.com/pingcap/tidb/util/memory"
 	"github.com/pingcap/tidb/util/trxevents"
-	tikvstore "github.com/tikv/client-go/v2/kv"
-	"github.com/tikv/client-go/v2/oracle"
-	"github.com/tikv/client-go/v2/tikv"
 )
 
 // UnCommitIndexKVFlag uses to indicate the index key/value is no need to commit.
@@ -290,7 +291,7 @@ func (t StoreType) Name() string {
 type Request struct {
 	// Tp is the request type.
 	Tp        int64
-	StartTs   uint64
+	StartTS   uint64
 	Data      []byte
 	KeyRanges []KeyRange
 

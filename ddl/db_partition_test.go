@@ -23,14 +23,16 @@ import (
 	"sync/atomic"
 	"time"
 
+	"go.uber.org/zap"
+
 	. "github.com/pingcap/check"
 	"github.com/pingcap/errors"
 	"github.com/pingcap/failpoint"
+
 	"github.com/pingcap/tidb/config"
 	"github.com/pingcap/tidb/ddl"
 	"github.com/pingcap/tidb/ddl/testutil"
 	"github.com/pingcap/tidb/domain"
-	"github.com/pingcap/tidb/errno"
 	tmysql "github.com/pingcap/tidb/errno"
 	"github.com/pingcap/tidb/kv"
 	"github.com/pingcap/tidb/meta"
@@ -51,7 +53,6 @@ import (
 	"github.com/pingcap/tidb/util/logutil"
 	"github.com/pingcap/tidb/util/mock"
 	"github.com/pingcap/tidb/util/testkit"
-	"go.uber.org/zap"
 )
 
 func (s *testIntegrationSuite3) TestCreateTableWithPartition(c *C) {
@@ -3415,7 +3416,7 @@ func (s *testSerialDBSuite1) TestAddTableWithPartition(c *C) {
 	tk := testkit.NewTestKitWithInit(c, s.store)
 	tk.MustExec("use test;")
 	tk.MustExec("drop table if exists global_partition_table;")
-	tk.MustGetErrCode("create global temporary table global_partition_table (a int, b int) partition by hash(a) partitions 3 ON COMMIT DELETE ROWS;", errno.ErrPartitionNoTemporary)
+	tk.MustGetErrCode("create global temporary table global_partition_table (a int, b int) partition by hash(a) partitions 3 ON COMMIT DELETE ROWS;", tmysql.ErrPartitionNoTemporary)
 	tk.MustExec("drop table if exists global_partition_table;")
 	tk.MustExec("drop table if exists partition_table;")
 	_, err := tk.Exec("create table partition_table (a int, b int) partition by hash(a) partitions 3;")
@@ -3427,7 +3428,7 @@ func (s *testSerialDBSuite1) TestAddTableWithPartition(c *C) {
 			partition p1 values less than (20),
 			partition p2 values less than (30),
 			partition p3 values less than (MAXVALUE)
-	) ON COMMIT DELETE ROWS;`, errno.ErrPartitionNoTemporary)
+	) ON COMMIT DELETE ROWS;`, tmysql.ErrPartitionNoTemporary)
 	tk.MustExec("drop table if exists partition_range_table;")
 	tk.MustExec("drop table if exists partition_list_table;")
 	tk.MustExec("set @@session.tidb_enable_list_partition = ON")
@@ -3435,13 +3436,13 @@ func (s *testSerialDBSuite1) TestAddTableWithPartition(c *C) {
 	    partition p0 values in (1,2),
 	    partition p1 values in (3,4),
 	    partition p3 values in (5,null)
-	) ON COMMIT DELETE ROWS;`, errno.ErrPartitionNoTemporary)
+	) ON COMMIT DELETE ROWS;`, tmysql.ErrPartitionNoTemporary)
 	tk.MustExec("drop table if exists partition_list_table;")
 
 	// for local temporary table
 	tk.MustExec("use test;")
 	tk.MustExec("drop table if exists local_partition_table;")
-	tk.MustGetErrCode("create temporary table local_partition_table (a int, b int) partition by hash(a) partitions 3;", errno.ErrPartitionNoTemporary)
+	tk.MustGetErrCode("create temporary table local_partition_table (a int, b int) partition by hash(a) partitions 3;", tmysql.ErrPartitionNoTemporary)
 	tk.MustExec("drop table if exists local_partition_table;")
 	tk.MustExec("drop table if exists partition_table;")
 	_, err = tk.Exec("create table partition_table (a int, b int) partition by hash(a) partitions 3;")
@@ -3453,7 +3454,7 @@ func (s *testSerialDBSuite1) TestAddTableWithPartition(c *C) {
 			partition p1 values less than (20),
 			partition p2 values less than (30),
 			partition p3 values less than (MAXVALUE)
-	);`, errno.ErrPartitionNoTemporary)
+	);`, tmysql.ErrPartitionNoTemporary)
 	tk.MustExec("drop table if exists local_partition_range_table;")
 	tk.MustExec("drop table if exists local_partition_list_table;")
 	tk.MustExec("set @@session.tidb_enable_list_partition = ON")
@@ -3461,7 +3462,7 @@ func (s *testSerialDBSuite1) TestAddTableWithPartition(c *C) {
 	    partition p0 values in (1,2),
 	    partition p1 values in (3,4),
 	    partition p3 values in (5,null)
-	);`, errno.ErrPartitionNoTemporary)
+	);`, tmysql.ErrPartitionNoTemporary)
 	tk.MustExec("drop table if exists local_partition_list_table;")
 }
 

@@ -177,7 +177,7 @@ func CountStmtNode(stmtNode ast.StmtNode, inRestrictedSQL bool) {
 
 	dbLabels := getStmtDbLabel(stmtNode)
 	for dbLabel := range dbLabels {
-		metrics.DbStmtNodeCounter.WithLabelValues(dbLabel, typeLabel).Inc()
+		metrics.DBStmtNodeCounter.WithLabelValues(dbLabel, typeLabel).Inc()
 	}
 }
 

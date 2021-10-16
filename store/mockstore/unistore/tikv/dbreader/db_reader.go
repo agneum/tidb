@@ -36,6 +36,7 @@ import (
 	"github.com/pingcap/badger/y"
 	"github.com/pingcap/errors"
 	"github.com/pingcap/kvproto/pkg/kvrpcpb"
+
 	"github.com/pingcap/tidb/store/mockstore/unistore/tikv/mvcc"
 )
 
@@ -230,8 +231,8 @@ func (r *DBReader) Scan(startKey, endKey []byte, limit int, startTS uint64, proc
 	return nil
 }
 
-// GetKeyByStartTs gets a key with the start ts.
-func (r *DBReader) GetKeyByStartTs(startKey, endKey []byte, startTs uint64) ([]byte, error) {
+// GetKeyByStartTS gets a key with the start ts.
+func (r *DBReader) GetKeyByStartTS(startKey, endKey []byte, startTs uint64) ([]byte, error) {
 	iter := r.GetIter()
 	iter.SetAllVersions(true)
 	for iter.Seek(startKey); iter.Valid(); iter.Next() {

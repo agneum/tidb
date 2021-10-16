@@ -123,10 +123,10 @@ func (p *LogicalLimit) BuildKeyInfo(selfSchema *expression.Schema, childSchema [
 }
 
 // BuildKeyInfo implements LogicalPlan BuildKeyInfo interface.
-func (p *LogicalTopN) BuildKeyInfo(selfSchema *expression.Schema, childSchema []*expression.Schema) {
-	p.baseLogicalPlan.BuildKeyInfo(selfSchema, childSchema)
-	if p.Count == 1 {
-		p.maxOneRow = true
+func (lt *LogicalTopN) BuildKeyInfo(selfSchema *expression.Schema, childSchema []*expression.Schema) {
+	lt.baseLogicalPlan.BuildKeyInfo(selfSchema, childSchema)
+	if lt.Count == 1 {
+		lt.maxOneRow = true
 	}
 }
 
@@ -309,7 +309,7 @@ func (is *LogicalIndexScan) BuildKeyInfo(selfSchema *expression.Schema, childSch
 }
 
 // BuildKeyInfo implements LogicalPlan BuildKeyInfo interface.
-func (tg *TiKVSingleGather) BuildKeyInfo(selfSchema *expression.Schema, childSchema []*expression.Schema) {
+func (sg *TiKVSingleGather) BuildKeyInfo(selfSchema *expression.Schema, childSchema []*expression.Schema) {
 	selfSchema.Keys = childSchema[0].Keys
 }
 

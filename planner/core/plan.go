@@ -21,6 +21,8 @@ import (
 
 	"github.com/cznic/mathutil"
 	"github.com/pingcap/errors"
+	"github.com/pingcap/tipb/go-tipb"
+
 	"github.com/pingcap/tidb/expression"
 	"github.com/pingcap/tidb/kv"
 	"github.com/pingcap/tidb/planner/property"
@@ -28,7 +30,6 @@ import (
 	"github.com/pingcap/tidb/sessionctx"
 	"github.com/pingcap/tidb/types"
 	"github.com/pingcap/tidb/util/stringutil"
-	"github.com/pingcap/tipb/go-tipb"
 )
 
 // Plan is the description of an execution flow.
@@ -526,9 +527,9 @@ func (p *baseLogicalPlan) BuildKeyInfo(selfSchema *expression.Schema, childSchem
 }
 
 // BuildKeyInfo implements LogicalPlan BuildKeyInfo interface.
-func (p *logicalSchemaProducer) BuildKeyInfo(selfSchema *expression.Schema, childSchema []*expression.Schema) {
+func (s *logicalSchemaProducer) BuildKeyInfo(selfSchema *expression.Schema, childSchema []*expression.Schema) {
 	selfSchema.Keys = nil
-	p.baseLogicalPlan.BuildKeyInfo(selfSchema, childSchema)
+	s.baseLogicalPlan.BuildKeyInfo(selfSchema, childSchema)
 
 	// default implementation for plans has only one child: proprgate child keys
 	// multi-children plans are likely to have particular implementation.

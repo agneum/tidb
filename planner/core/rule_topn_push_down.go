@@ -18,6 +18,7 @@ import (
 	"context"
 
 	"github.com/cznic/mathutil"
+
 	"github.com/pingcap/tidb/expression"
 	"github.com/pingcap/tidb/planner/util"
 )
@@ -30,15 +31,15 @@ func (s *pushDownTopNOptimizer) optimize(ctx context.Context, p LogicalPlan) (Lo
 	return p.pushDownTopN(nil), nil
 }
 
-func (s *baseLogicalPlan) pushDownTopN(topN *LogicalTopN) LogicalPlan {
-	p := s.self
-	for i, child := range p.Children() {
-		p.Children()[i] = child.pushDownTopN(nil)
+func (p *baseLogicalPlan) pushDownTopN(topN *LogicalTopN) LogicalPlan {
+	plan := p.self
+	for i, child := range plan.Children() {
+		plan.Children()[i] = child.pushDownTopN(nil)
 	}
 	if topN != nil {
-		return topN.setChild(p)
+		return topN.setChild(plan)
 	}
-	return p
+	return plan
 }
 
 // setChild set p as topn's child.

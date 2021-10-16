@@ -293,15 +293,15 @@ func (p PhysicalLock) Init(ctx sessionctx.Context, stats *property.StatsInfo, pr
 }
 
 // Init initializes PhysicalTableScan.
-func (p PhysicalTableScan) Init(ctx sessionctx.Context, offset int) *PhysicalTableScan {
-	p.basePhysicalPlan = newBasePhysicalPlan(ctx, plancodec.TypeTableScan, &p, offset)
-	return &p
+func (ts PhysicalTableScan) Init(ctx sessionctx.Context, offset int) *PhysicalTableScan {
+	ts.basePhysicalPlan = newBasePhysicalPlan(ctx, plancodec.TypeTableScan, &ts, offset)
+	return &ts
 }
 
 // Init initializes PhysicalIndexScan.
-func (p PhysicalIndexScan) Init(ctx sessionctx.Context, offset int) *PhysicalIndexScan {
-	p.basePhysicalPlan = newBasePhysicalPlan(ctx, plancodec.TypeIdxScan, &p, offset)
-	return &p
+func (is PhysicalIndexScan) Init(ctx sessionctx.Context, offset int) *PhysicalIndexScan {
+	is.basePhysicalPlan = newBasePhysicalPlan(ctx, plancodec.TypeIdxScan, &is, offset)
+	return &is
 }
 
 // Init initializes LogicalMemTable.
@@ -334,26 +334,26 @@ func (p PhysicalMergeJoin) Init(ctx sessionctx.Context, stats *property.StatsInf
 }
 
 // Init initializes basePhysicalAgg.
-func (base basePhysicalAgg) Init(ctx sessionctx.Context, stats *property.StatsInfo, offset int) *basePhysicalAgg {
-	base.basePhysicalPlan = newBasePhysicalPlan(ctx, plancodec.TypeHashAgg, &base, offset)
-	base.stats = stats
-	return &base
+func (p basePhysicalAgg) Init(ctx sessionctx.Context, stats *property.StatsInfo, offset int) *basePhysicalAgg {
+	p.basePhysicalPlan = newBasePhysicalPlan(ctx, plancodec.TypeHashAgg, &p, offset)
+	p.stats = stats
+	return &p
 }
 
-func (base basePhysicalAgg) initForHash(ctx sessionctx.Context, stats *property.StatsInfo, offset int, props ...*property.PhysicalProperty) *PhysicalHashAgg {
-	p := &PhysicalHashAgg{base}
-	p.basePhysicalPlan = newBasePhysicalPlan(ctx, plancodec.TypeHashAgg, p, offset)
-	p.childrenReqProps = props
-	p.stats = stats
-	return p
+func (p basePhysicalAgg) initForHash(ctx sessionctx.Context, stats *property.StatsInfo, offset int, props ...*property.PhysicalProperty) *PhysicalHashAgg {
+	hashAgg := &PhysicalHashAgg{p}
+	hashAgg.basePhysicalPlan = newBasePhysicalPlan(ctx, plancodec.TypeHashAgg, hashAgg, offset)
+	hashAgg.childrenReqProps = props
+	hashAgg.stats = stats
+	return hashAgg
 }
 
-func (base basePhysicalAgg) initForStream(ctx sessionctx.Context, stats *property.StatsInfo, offset int, props ...*property.PhysicalProperty) *PhysicalStreamAgg {
-	p := &PhysicalStreamAgg{base}
-	p.basePhysicalPlan = newBasePhysicalPlan(ctx, plancodec.TypeStreamAgg, p, offset)
-	p.childrenReqProps = props
-	p.stats = stats
-	return p
+func (p basePhysicalAgg) initForStream(ctx sessionctx.Context, stats *property.StatsInfo, offset int, props ...*property.PhysicalProperty) *PhysicalStreamAgg {
+	streamAgg := &PhysicalStreamAgg{p}
+	streamAgg.basePhysicalPlan = newBasePhysicalPlan(ctx, plancodec.TypeStreamAgg, streamAgg, offset)
+	streamAgg.childrenReqProps = props
+	streamAgg.stats = stats
+	return streamAgg
 }
 
 // Init initializes PhysicalApply.

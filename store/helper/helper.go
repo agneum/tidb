@@ -33,6 +33,12 @@ import (
 	deadlockpb "github.com/pingcap/kvproto/pkg/deadlock"
 	"github.com/pingcap/kvproto/pkg/kvrpcpb"
 	"github.com/pingcap/log"
+	"github.com/tikv/client-go/v2/oracle"
+	"github.com/tikv/client-go/v2/tikv"
+	"github.com/tikv/client-go/v2/tikvrpc"
+	"github.com/tikv/client-go/v2/txnkv/txnlock"
+	"go.uber.org/zap"
+
 	"github.com/pingcap/tidb/kv"
 	"github.com/pingcap/tidb/parser/model"
 	derr "github.com/pingcap/tidb/store/driver/error"
@@ -41,11 +47,6 @@ import (
 	"github.com/pingcap/tidb/util/codec"
 	"github.com/pingcap/tidb/util/logutil"
 	"github.com/pingcap/tidb/util/pdapi"
-	"github.com/tikv/client-go/v2/oracle"
-	"github.com/tikv/client-go/v2/tikv"
-	"github.com/tikv/client-go/v2/tikvrpc"
-	"github.com/tikv/client-go/v2/txnkv/txnlock"
-	"go.uber.org/zap"
 )
 
 // Storage represents a storage that connects TiKV.
@@ -244,7 +245,7 @@ func (h *Helper) FetchHotRegion(rw string) (map[uint64]RegionMetric, error) {
 
 // TblIndex stores the things to index one table.
 type TblIndex struct {
-	DbName    string
+	DBName    string
 	TableName string
 	TableID   int64
 	IndexName string
@@ -274,7 +275,7 @@ type RegionFrameRange struct {
 type HotTableIndex struct {
 	RegionID     uint64        `json:"region_id"`
 	RegionMetric *RegionMetric `json:"region_metric"`
-	DbName       string        `json:"db_name"`
+	DBName       string        `json:"db_name"`
 	TableName    string        `json:"table_name"`
 	TableID      int64         `json:"table_id"`
 	IndexName    string        `json:"index_name"`
@@ -299,7 +300,7 @@ func (h *Helper) FetchRegionTableIndex(metrics map[uint64]RegionMetric, allSchem
 		}
 		f := h.FindTableIndexOfRegion(allSchemas, hotRange)
 		if f != nil {
-			t.DbName = f.DBName
+			t.DBName = f.DBName
 			t.TableName = f.TableName
 			t.TableID = f.TableID
 			t.IndexName = f.IndexName
@@ -831,8 +832,8 @@ type StoreDetailStat struct {
 	RegionWeight    float64   `json:"region_weight"`
 	RegionScore     float64   `json:"region_score"`
 	RegionSize      int64     `json:"region_size"`
-	StartTs         time.Time `json:"start_ts"`
-	LastHeartbeatTs time.Time `json:"last_heartbeat_ts"`
+	StartTS         time.Time `json:"start_ts"`
+	LastHeartbeatTS time.Time `json:"last_heartbeat_ts"`
 	Uptime          string    `json:"uptime"`
 }
 

@@ -42,6 +42,19 @@ import (
 	sst "github.com/pingcap/kvproto/pkg/import_sstpb"
 	"github.com/pingcap/kvproto/pkg/kvrpcpb"
 	"github.com/pingcap/kvproto/pkg/metapb"
+	"github.com/tikv/client-go/v2/oracle"
+	pd "github.com/tikv/pd/client"
+	"go.uber.org/atomic"
+	"go.uber.org/multierr"
+	"go.uber.org/zap"
+	"golang.org/x/sync/errgroup"
+	"google.golang.org/grpc"
+	"google.golang.org/grpc/backoff"
+	"google.golang.org/grpc/codes"
+	"google.golang.org/grpc/credentials"
+	"google.golang.org/grpc/keepalive"
+	"google.golang.org/grpc/status"
+
 	"github.com/pingcap/tidb/br/pkg/lightning/backend"
 	"github.com/pingcap/tidb/br/pkg/lightning/backend/kv"
 	"github.com/pingcap/tidb/br/pkg/lightning/checkpoints"
@@ -65,18 +78,6 @@ import (
 	"github.com/pingcap/tidb/tablecodec"
 	"github.com/pingcap/tidb/util/codec"
 	"github.com/pingcap/tidb/util/hack"
-	"github.com/tikv/client-go/v2/oracle"
-	pd "github.com/tikv/pd/client"
-	"go.uber.org/atomic"
-	"go.uber.org/multierr"
-	"go.uber.org/zap"
-	"golang.org/x/sync/errgroup"
-	"google.golang.org/grpc"
-	"google.golang.org/grpc/backoff"
-	"google.golang.org/grpc/codes"
-	"google.golang.org/grpc/credentials"
-	"google.golang.org/grpc/keepalive"
-	"google.golang.org/grpc/status"
 )
 
 const (
@@ -1033,8 +1034,8 @@ func (local *local) checkMultiIngestSupport(ctx context.Context, pdCtl *pdutil.P
 }
 
 // rlock read locks a local file and returns the File instance if it exists.
-func (local *local) rLockEngine(engineId uuid.UUID) *File {
-	if e, ok := local.engines.Load(engineId); ok {
+func (local *local) rLockEngine(engineID uuid.UUID) *File {
+	if e, ok := local.engines.Load(engineID); ok {
 		engine := e.(*File)
 		engine.rLock()
 		return engine

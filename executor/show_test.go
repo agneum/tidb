@@ -19,7 +19,6 @@ import (
 	"fmt"
 	"strings"
 
-	"github.com/pingcap/check"
 	. "github.com/pingcap/check"
 	"github.com/pingcap/failpoint"
 	"github.com/pingcap/tidb/domain"
@@ -453,7 +452,7 @@ func (s *testSuite5) TestShowCreateUser(c *C) {
 
 	// Compare only the start of the output as the salt changes every time.
 	rows = tk.MustQuery("SHOW CREATE USER 'sha_test'@'%'")
-	c.Assert(rows.Rows()[0][0].(string)[:78], check.Equals, "CREATE USER 'sha_test'@'%' IDENTIFIED WITH 'caching_sha2_password' AS '$A$005$")
+	c.Assert(rows.Rows()[0][0].(string)[:78], Equals, "CREATE USER 'sha_test'@'%' IDENTIFIED WITH 'caching_sha2_password' AS '$A$005$")
 
 }
 

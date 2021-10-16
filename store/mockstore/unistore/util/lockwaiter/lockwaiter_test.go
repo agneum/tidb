@@ -83,7 +83,7 @@ func TestLockwaiterConcurrent(t *testing.T) {
 	wg := &sync.WaitGroup{}
 	endWg := &sync.WaitGroup{}
 	waitForTxn := uint64(100)
-	commitTs := uint64(199)
+	commitTS := uint64(199)
 	deadlockKeyHash := uint64(299)
 	numbers := uint64(10)
 	lock := sync.RWMutex{}
@@ -106,7 +106,7 @@ func TestLockwaiterConcurrent(t *testing.T) {
 				res := waiter.Wait()
 				// even woken up by commit
 				if num%2 == 0 {
-					require.Equal(t, commitTs, res.CommitTS)
+					require.Equal(t, commitTS, res.CommitTS)
 				} else {
 					// odd woken up by deadlock
 					require.NotNil(t, res.DeadlockResp)
@@ -124,7 +124,7 @@ func TestLockwaiterConcurrent(t *testing.T) {
 		keyHashes = keyHashes[:0]
 		if i%2 == 0 {
 			log.S().Infof("wakeup i=%v", i)
-			mgr.WakeUp(waitForTxn, commitTs, append(keyHashes, i*10))
+			mgr.WakeUp(waitForTxn, commitTS, append(keyHashes, i*10))
 		} else {
 			log.S().Infof("deadlock wakeup i=%v", i)
 			lock.Lock()

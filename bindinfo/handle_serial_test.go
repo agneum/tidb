@@ -19,6 +19,9 @@ import (
 	"fmt"
 	"testing"
 
+	dto "github.com/prometheus/client_model/go"
+	"github.com/stretchr/testify/require"
+
 	"github.com/pingcap/tidb/bindinfo"
 	"github.com/pingcap/tidb/config"
 	"github.com/pingcap/tidb/domain"
@@ -26,8 +29,6 @@ import (
 	"github.com/pingcap/tidb/parser"
 	"github.com/pingcap/tidb/testkit"
 	utilparser "github.com/pingcap/tidb/util/parser"
-	dto "github.com/prometheus/client_model/go"
-	"github.com/stretchr/testify/require"
 )
 
 func utilCleanBindingEnv(tk *testkit.TestKit, dom *domain.Domain) {
@@ -111,13 +112,13 @@ func TestBindParse(t *testing.T) {
 
 	originSQL := "select * from `test` . `t`"
 	bindSQL := "select * from `test` . `t` use index(index_t)"
-	defaultDb := "test"
+	defaultDB := "test"
 	status := "using"
 	charset := "utf8mb4"
 	collation := "utf8mb4_bin"
 	source := bindinfo.Manual
 	sql := fmt.Sprintf(`INSERT INTO mysql.bind_info(original_sql,bind_sql,default_db,status,create_time,update_time,charset,collation,source) VALUES ('%s', '%s', '%s', '%s', NOW(), NOW(),'%s', '%s', '%s')`,
-		originSQL, bindSQL, defaultDb, status, charset, collation, source)
+		originSQL, bindSQL, defaultDB, status, charset, collation, source)
 	tk.MustExec(sql)
 	bindHandle := bindinfo.NewBindHandle(tk.Session())
 	err := bindHandle.Update(true)
@@ -130,7 +131,7 @@ func TestBindParse(t *testing.T) {
 	require.Equal(t, "select * from `test` . `t`", bindData.OriginalSQL)
 	bind := bindData.Bindings[0]
 	require.Equal(t, "select * from `test` . `t` use index(index_t)", bind.BindSQL)
-	require.Equal(t, "test", bindData.Db)
+	require.Equal(t, "test", bindData.DB)
 	require.Equal(t, "using", bind.Status)
 	require.Equal(t, "utf8mb4", bind.Charset)
 	require.Equal(t, "utf8mb4_bin", bind.Collation)
@@ -384,7 +385,7 @@ func TestGlobalBinding(t *testing.T) {
 		require.Equal(t, testSQL.originSQL, bindData.OriginalSQL)
 		bind := bindData.Bindings[0]
 		require.Equal(t, testSQL.bindSQL, bind.BindSQL)
-		require.Equal(t, "test", bindData.Db)
+		require.Equal(t, "test", bindData.DB)
 		require.Equal(t, "using", bind.Status)
 		require.NotNil(t, bind.Charset)
 		require.NotNil(t, bind.Collation)
@@ -417,7 +418,7 @@ func TestGlobalBinding(t *testing.T) {
 		require.Equal(t, testSQL.originSQL, bindData.OriginalSQL)
 		bind = bindData.Bindings[0]
 		require.Equal(t, testSQL.bindSQL, bind.BindSQL)
-		require.Equal(t, "test", bindData.Db)
+		require.Equal(t, "test", bindData.DB)
 		require.Equal(t, "using", bind.Status)
 		require.NotNil(t, bind.Charset)
 		require.NotNil(t, bind.Collation)

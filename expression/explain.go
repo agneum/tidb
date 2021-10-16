@@ -26,32 +26,32 @@ import (
 )
 
 // ExplainInfo implements the Expression interface.
-func (expr *ScalarFunction) ExplainInfo() string {
-	return expr.explainInfo(false)
+func (sf *ScalarFunction) ExplainInfo() string {
+	return sf.explainInfo(false)
 }
 
-func (expr *ScalarFunction) explainInfo(normalized bool) string {
+func (sf *ScalarFunction) explainInfo(normalized bool) string {
 	var buffer bytes.Buffer
-	fmt.Fprintf(&buffer, "%s(", expr.FuncName.L)
-	switch expr.FuncName.L {
+	fmt.Fprintf(&buffer, "%s(", sf.FuncName.L)
+	switch sf.FuncName.L {
 	case ast.Cast:
-		for _, arg := range expr.GetArgs() {
+		for _, arg := range sf.GetArgs() {
 			if normalized {
 				buffer.WriteString(arg.ExplainNormalizedInfo())
 			} else {
 				buffer.WriteString(arg.ExplainInfo())
 			}
 			buffer.WriteString(", ")
-			buffer.WriteString(expr.RetType.String())
+			buffer.WriteString(sf.RetType.String())
 		}
 	default:
-		for i, arg := range expr.GetArgs() {
+		for i, arg := range sf.GetArgs() {
 			if normalized {
 				buffer.WriteString(arg.ExplainNormalizedInfo())
 			} else {
 				buffer.WriteString(arg.ExplainInfo())
 			}
-			if i+1 < len(expr.GetArgs()) {
+			if i+1 < len(sf.GetArgs()) {
 				buffer.WriteString(", ")
 			}
 		}
@@ -61,8 +61,8 @@ func (expr *ScalarFunction) explainInfo(normalized bool) string {
 }
 
 // ExplainNormalizedInfo implements the Expression interface.
-func (expr *ScalarFunction) ExplainNormalizedInfo() string {
-	return expr.explainInfo(true)
+func (sf *ScalarFunction) ExplainNormalizedInfo() string {
+	return sf.explainInfo(true)
 }
 
 // ExplainInfo implements the Expression interface.
@@ -79,20 +79,20 @@ func (col *Column) ExplainNormalizedInfo() string {
 }
 
 // ExplainInfo implements the Expression interface.
-func (expr *Constant) ExplainInfo() string {
-	dt, err := expr.Eval(chunk.Row{})
+func (c *Constant) ExplainInfo() string {
+	dt, err := c.Eval(chunk.Row{})
 	if err != nil {
 		return "not recognized const vanue"
 	}
-	return expr.format(dt)
+	return c.format(dt)
 }
 
 // ExplainNormalizedInfo implements the Expression interface.
-func (expr *Constant) ExplainNormalizedInfo() string {
+func (c *Constant) ExplainNormalizedInfo() string {
 	return "?"
 }
 
-func (expr *Constant) format(dt types.Datum) string {
+func (c *Constant) format(dt types.Datum) string {
 	switch dt.Kind() {
 	case types.KindNull:
 		return "NULL"

@@ -18,6 +18,7 @@ import (
 	"github.com/pingcap/badger/y"
 	"github.com/pingcap/errors"
 	"github.com/pingcap/kvproto/pkg/kvrpcpb"
+
 	"github.com/pingcap/tidb/util/codec"
 )
 
@@ -61,7 +62,7 @@ func ParseWriteCFValue(data []byte) (wv WriteCFValue, err error) {
 const (
 	shortValuePrefix  = 'v'
 	forUpdatePrefix   = 'f'
-	minCommitTsPrefix = 'm'
+	minCommitTSPrefix = 'm'
 
 	//ShortValueMaxLen defines max length of short value.
 	ShortValueMaxLen = 64
@@ -69,10 +70,10 @@ const (
 
 // EncodeWriteCFValue accepts a write cf parameters and return the encoded bytes data.
 // Just like the tikv encoding form. See tikv/src/storage/mvcc/write.rs for more detail.
-func EncodeWriteCFValue(t WriteType, startTs uint64, shortVal []byte) []byte {
+func EncodeWriteCFValue(t WriteType, startTS uint64, shortVal []byte) []byte {
 	data := make([]byte, 1)
 	data[0] = t
-	data = codec.EncodeUvarint(data, startTs)
+	data = codec.EncodeUvarint(data, startTS)
 	if len(shortVal) != 0 {
 		data = append(data, byte(shortValuePrefix), byte(len(shortVal)))
 		return append(data, shortVal...)
@@ -111,7 +112,7 @@ func EncodeLockCFValue(lock *Lock) ([]byte, []byte) {
 		data = codec.EncodeUint(data, lock.ForUpdateTS)
 	}
 	if lock.MinCommitTS > 0 {
-		data = append(data, byte(minCommitTsPrefix))
+		data = append(data, byte(minCommitTSPrefix))
 		data = codec.EncodeUint(data, lock.MinCommitTS)
 	}
 	return data, longValue
@@ -173,7 +174,7 @@ func ParseLockCFValue(data []byte) (lock Lock, err error) {
 	if len(data) > 0 && data[0] == forUpdatePrefix {
 		data, lock.ForUpdateTS, err = codec.DecodeUint(data[1:])
 	}
-	if len(data) > 0 && data[0] == minCommitTsPrefix {
+	if len(data) > 0 && data[0] == minCommitTSPrefix {
 		data, lock.MinCommitTS, err = codec.DecodeUint(data[1:])
 	}
 	return

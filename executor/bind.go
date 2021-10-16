@@ -94,7 +94,7 @@ func (e *SQLBindExec) createSQLBind() error {
 	}
 	record := &bindinfo.BindRecord{
 		OriginalSQL: e.normdOrigSQL,
-		Db:          e.db,
+		DB:          e.db,
 		Bindings:    []bindinfo.Binding{bindInfo},
 	}
 	if !e.isGlobal {

@@ -88,7 +88,7 @@ type cache map[string][]*BindRecord
 // BindRecord represents a sql bind record retrieved from the storage.
 type BindRecord struct {
 	OriginalSQL string
-	Db          string
+	DB          string
 
 	Bindings []Binding
 }
@@ -121,7 +121,7 @@ func (br *BindRecord) prepareHints(sctx sessionctx.Context) error {
 		if (bind.Hint != nil && bind.ID != "") || bind.Status == deleted {
 			continue
 		}
-		hintsSet, stmt, warns, err := hint.ParseHintsSet(p, bind.BindSQL, bind.Charset, bind.Collation, br.Db)
+		hintsSet, stmt, warns, err := hint.ParseHintsSet(p, bind.BindSQL, bind.Charset, bind.Collation, br.DB)
 		if err != nil {
 			return err
 		}
@@ -181,7 +181,7 @@ func merge(lBindRecord, rBindRecord *BindRecord) *BindRecord {
 func (br *BindRecord) remove(deleted *BindRecord) *BindRecord {
 	// Delete all bindings.
 	if len(deleted.Bindings) == 0 {
-		return &BindRecord{OriginalSQL: br.OriginalSQL, Db: br.Db}
+		return &BindRecord{OriginalSQL: br.OriginalSQL, DB: br.DB}
 	}
 	result := br.shallowCopy()
 	for _, deletedBind := range deleted.Bindings {
@@ -196,7 +196,7 @@ func (br *BindRecord) remove(deleted *BindRecord) *BindRecord {
 }
 
 func (br *BindRecord) removeDeletedBindings() *BindRecord {
-	result := BindRecord{OriginalSQL: br.OriginalSQL, Db: br.Db, Bindings: make([]Binding, 0, len(br.Bindings))}
+	result := BindRecord{OriginalSQL: br.OriginalSQL, DB: br.DB, Bindings: make([]Binding, 0, len(br.Bindings))}
 	for _, binding := range br.Bindings {
 		if binding.Status != deleted {
 			result.Bindings = append(result.Bindings, binding)
@@ -209,7 +209,7 @@ func (br *BindRecord) removeDeletedBindings() *BindRecord {
 func (br *BindRecord) shallowCopy() *BindRecord {
 	result := BindRecord{
 		OriginalSQL: br.OriginalSQL,
-		Db:          br.Db,
+		DB:          br.DB,
 		Bindings:    make([]Binding, len(br.Bindings)),
 	}
 	copy(result.Bindings, br.Bindings)
@@ -232,7 +232,7 @@ func (br *BindRecord) metrics() ([]float64, []int) {
 	if br == nil {
 		return sizes, count
 	}
-	commonLength := float64(len(br.OriginalSQL) + len(br.Db))
+	commonLength := float64(len(br.OriginalSQL) + len(br.DB))
 	// We treat it as deleted if there are no bindings. It could only occur in session handles.
 	if len(br.Bindings) == 0 {
 		sizes[statusIndex[deleted]] = commonLength

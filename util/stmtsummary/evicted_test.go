@@ -387,8 +387,8 @@ func TestAddInfo(t *testing.T) {
 		maxPrewriteTime:      3,
 		sumCommitTime:        8,
 		maxCommitTime:        5,
-		sumGetCommitTsTime:   8,
-		maxGetCommitTsTime:   8,
+		sumGetCommitTSTime:   8,
+		maxGetCommitTSTime:   8,
 		sumCommitBackoffTime: 8,
 		maxCommitBackoffTime: 8,
 
@@ -481,8 +481,8 @@ func TestAddInfo(t *testing.T) {
 		maxPrewriteTime:      3,
 		sumCommitTime:        8,
 		maxCommitTime:        5,
-		sumGetCommitTsTime:   8,
-		maxGetCommitTsTime:   8,
+		sumGetCommitTSTime:   8,
+		maxGetCommitTSTime:   8,
 		sumCommitBackoffTime: 8,
 		maxCommitBackoffTime: 8,
 
@@ -582,8 +582,8 @@ func TestAddInfo(t *testing.T) {
 		maxPrewriteTime:      3,
 		sumCommitTime:        16,
 		maxCommitTime:        5,
-		sumGetCommitTsTime:   16,
-		maxGetCommitTsTime:   8,
+		sumGetCommitTSTime:   16,
+		maxGetCommitTSTime:   8,
 		sumCommitBackoffTime: 16,
 		maxCommitBackoffTime: 8,
 

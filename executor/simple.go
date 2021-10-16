@@ -23,7 +23,11 @@ import (
 	"time"
 
 	"github.com/ngaut/pools"
+	tikvutil "github.com/tikv/client-go/v2/util"
+	"go.uber.org/zap"
+
 	"github.com/pingcap/errors"
+	"github.com/pingcap/tipb/go-tipb"
 	"github.com/pingcap/tidb/config"
 	"github.com/pingcap/tidb/distsql"
 	"github.com/pingcap/tidb/domain"
@@ -36,7 +40,6 @@ import (
 	"github.com/pingcap/tidb/parser/auth"
 	"github.com/pingcap/tidb/parser/model"
 	"github.com/pingcap/tidb/parser/mysql"
-	"github.com/pingcap/tidb/planner/core"
 	plannercore "github.com/pingcap/tidb/planner/core"
 	"github.com/pingcap/tidb/plugin"
 	"github.com/pingcap/tidb/privilege"
@@ -50,9 +53,6 @@ import (
 	"github.com/pingcap/tidb/util/sem"
 	"github.com/pingcap/tidb/util/sqlexec"
 	"github.com/pingcap/tidb/util/timeutil"
-	"github.com/pingcap/tipb/go-tipb"
-	tikvutil "github.com/tikv/client-go/v2/util"
-	"go.uber.org/zap"
 )
 
 var (
@@ -397,7 +397,7 @@ func (e *SimpleExec) executeSetDefaultRole(ctx context.Context, s *ast.SetDefaul
 	activeRoles := sessionVars.ActiveRoles
 	if !checker.RequestVerification(activeRoles, mysql.SystemDB, mysql.DefaultRoleTable, "", mysql.UpdatePriv) {
 		if !checker.RequestVerification(activeRoles, "", "", "", mysql.CreateUserPriv) {
-			return core.ErrSpecificAccessDenied.GenWithStackByArgs("CREATE USER")
+			return plannercore.ErrSpecificAccessDenied.GenWithStackByArgs("CREATE USER")
 		}
 	}
 
@@ -738,11 +738,11 @@ func (e *SimpleExec) executeCreateUser(ctx context.Context, s *ast.CreateUserStm
 			if s.IsCreateRole {
 				if !checker.RequestVerification(activeRoles, "", "", "", mysql.CreateRolePriv) &&
 					!checker.RequestVerification(activeRoles, "", "", "", mysql.CreateUserPriv) {
-					return core.ErrSpecificAccessDenied.GenWithStackByArgs("CREATE ROLE or CREATE USER")
+					return plannercore.ErrSpecificAccessDenied.GenWithStackByArgs("CREATE ROLE or CREATE USER")
 				}
 			}
 			if !s.IsCreateRole && !checker.RequestVerification(activeRoles, "", "", "", mysql.CreateUserPriv) {
-				return core.ErrSpecificAccessDenied.GenWithStackByArgs("CREATE User")
+				return plannercore.ErrSpecificAccessDenied.GenWithStackByArgs("CREATE User")
 			}
 		}
 	}
@@ -1160,11 +1160,11 @@ func (e *SimpleExec) executeDropUser(ctx context.Context, s *ast.DropUserStmt) e
 		if s.IsDropRole {
 			if !checker.RequestVerification(activeRoles, "", "", "", mysql.DropRolePriv) &&
 				!checker.RequestVerification(activeRoles, "", "", "", mysql.CreateUserPriv) {
-				return core.ErrSpecificAccessDenied.GenWithStackByArgs("DROP ROLE or CREATE USER")
+				return plannercore.ErrSpecificAccessDenied.GenWithStackByArgs("DROP ROLE or CREATE USER")
 			}
 		}
 		if !s.IsDropRole && !checker.RequestVerification(activeRoles, "", "", "", mysql.CreateUserPriv) {
-			return core.ErrSpecificAccessDenied.GenWithStackByArgs("CREATE USER")
+			return plannercore.ErrSpecificAccessDenied.GenWithStackByArgs("CREATE USER")
 		}
 	}
 	hasSystemUserPriv := checker.RequestDynamicVerification(activeRoles, "SYSTEM_USER", false)
@@ -1547,7 +1547,7 @@ func (e *SimpleExec) executeDropStats(s *ast.DropStatsStmt) (err error) {
 	if s.IsGlobalStats {
 		statsIDs = []int64{s.Table.TableInfo.ID}
 	} else {
-		if statsIDs, _, err = core.GetPhysicalIDsAndPartitionNames(s.Table.TableInfo, s.PartitionNames); err != nil {
+		if statsIDs, _, err = plannercore.GetPhysicalIDsAndPartitionNames(s.Table.TableInfo, s.PartitionNames); err != nil {
 			return err
 		}
 	}

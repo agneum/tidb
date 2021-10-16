@@ -227,7 +227,7 @@ func TestRequestBuilder1(t *testing.T) {
 	require.NoError(t, err)
 	expect := &kv.Request{
 		Tp:      103,
-		StartTs: 0x0,
+		StartTS: 0x0,
 		Data:    []uint8{0x18, 0x0, 0x20, 0x0, 0x40, 0x0, 0x5a, 0x0},
 		KeyRanges: []kv.KeyRange{
 			{
@@ -305,7 +305,7 @@ func TestRequestBuilder2(t *testing.T) {
 	require.NoError(t, err)
 	expect := &kv.Request{
 		Tp:      103,
-		StartTs: 0x0,
+		StartTS: 0x0,
 		Data:    []uint8{0x18, 0x0, 0x20, 0x0, 0x40, 0x0, 0x5a, 0x0},
 		KeyRanges: []kv.KeyRange{
 			{
@@ -358,7 +358,7 @@ func TestRequestBuilder3(t *testing.T) {
 	require.NoError(t, err)
 	expect := &kv.Request{
 		Tp:      103,
-		StartTs: 0x0,
+		StartTS: 0x0,
 		Data:    []uint8{0x18, 0x0, 0x20, 0x0, 0x40, 0x0, 0x5a, 0x0},
 		KeyRanges: []kv.KeyRange{
 			{
@@ -423,18 +423,18 @@ func TestRequestBuilder4(t *testing.T) {
 		Build()
 	require.NoError(t, err)
 	expect := &kv.Request{
-		Tp:               103,
-		StartTs:          0x0,
-		Data:             []uint8{0x18, 0x0, 0x20, 0x0, 0x40, 0x0, 0x5a, 0x0},
-		KeyRanges:        keyRanges,
-		Cacheable:        true,
-		KeepOrder:        false,
-		Desc:             false,
-		Concurrency:      variable.DefDistSQLScanConcurrency,
-		IsolationLevel:   0,
-		Priority:         0,
-		Streaming:        true,
-		NotFillCache:     false,
+		Tp:             103,
+		StartTS:        0x0,
+		Data:           []uint8{0x18, 0x0, 0x20, 0x0, 0x40, 0x0, 0x5a, 0x0},
+		KeyRanges:      keyRanges,
+		Cacheable:      true,
+		KeepOrder:      false,
+		Desc:           false,
+		Concurrency:    variable.DefDistSQLScanConcurrency,
+		IsolationLevel: 0,
+		Priority:       0,
+		Streaming:      true,
+		NotFillCache:   false,
 		SyncLog:          false,
 		ReplicaRead:      kv.ReplicaReadLeader,
 		ReadReplicaScope: kv.GlobalReplicaScope,
@@ -470,18 +470,18 @@ func TestRequestBuilder5(t *testing.T) {
 		Build()
 	require.NoError(t, err)
 	expect := &kv.Request{
-		Tp:               104,
-		StartTs:          0x0,
-		Data:             []uint8{0x8, 0x0, 0x18, 0x0, 0x20, 0x0},
-		KeyRanges:        keyRanges,
-		KeepOrder:        true,
-		Desc:             false,
-		Concurrency:      15,
-		IsolationLevel:   kv.RC,
-		Priority:         1,
-		NotFillCache:     true,
-		SyncLog:          false,
-		Streaming:        false,
+		Tp:             104,
+		StartTS:        0x0,
+		Data:           []uint8{0x8, 0x0, 0x18, 0x0, 0x20, 0x0},
+		KeyRanges:      keyRanges,
+		KeepOrder:      true,
+		Desc:           false,
+		Concurrency:    15,
+		IsolationLevel: kv.RC,
+		Priority:       1,
+		NotFillCache:   true,
+		SyncLog:        false,
+		Streaming:      false,
 		ReadReplicaScope: kv.GlobalReplicaScope,
 	}
 	require.Equal(t, expect, actual)
@@ -502,18 +502,18 @@ func TestRequestBuilder6(t *testing.T) {
 		Build()
 	require.NoError(t, err)
 	expect := &kv.Request{
-		Tp:               105,
-		StartTs:          0x0,
-		Data:             []uint8{0x10, 0x0, 0x18, 0x0},
-		KeyRanges:        keyRanges,
-		KeepOrder:        false,
-		Desc:             false,
-		Concurrency:      concurrency,
-		IsolationLevel:   0,
-		Priority:         0,
-		NotFillCache:     true,
-		SyncLog:          false,
-		Streaming:        false,
+		Tp:             105,
+		StartTS:        0x0,
+		Data:           []uint8{0x10, 0x0, 0x18, 0x0},
+		KeyRanges:      keyRanges,
+		KeepOrder:      false,
+		Desc:           false,
+		Concurrency:    concurrency,
+		IsolationLevel: 0,
+		Priority:       0,
+		NotFillCache:   true,
+		SyncLog:        false,
+		Streaming:      false,
 		ReadReplicaScope: kv.GlobalReplicaScope,
 	}
 	require.Equal(t, expect, actual)
@@ -543,7 +543,7 @@ func TestRequestBuilder7(t *testing.T) {
 			require.NoError(t, err)
 			expect := &kv.Request{
 				Tp:               0,
-				StartTs:          0x0,
+				StartTS:          0x0,
 				KeepOrder:        false,
 				Desc:             false,
 				Concurrency:      concurrency,
@@ -569,7 +569,7 @@ func TestRequestBuilder8(t *testing.T) {
 	require.NoError(t, err)
 	expect := &kv.Request{
 		Tp:               0,
-		StartTs:          0x0,
+		StartTS:          0x0,
 		Data:             []uint8(nil),
 		Concurrency:      variable.DefDistSQLScanConcurrency,
 		IsolationLevel:   0,

@@ -20,6 +20,9 @@ import (
 	"strings"
 
 	"github.com/pingcap/errors"
+	"go.uber.org/zap"
+	"golang.org/x/tools/container/intsets"
+
 	"github.com/pingcap/tidb/expression"
 	"github.com/pingcap/tidb/kv"
 	"github.com/pingcap/tidb/parser/ast"
@@ -37,8 +40,6 @@ import (
 	"github.com/pingcap/tidb/util/logutil"
 	"github.com/pingcap/tidb/util/ranger"
 	"github.com/pingcap/tidb/util/set"
-	"go.uber.org/zap"
-	"golang.org/x/tools/container/intsets"
 )
 
 const (
@@ -1667,50 +1668,50 @@ func keepAccessCondsAsFilter4PlanCache(ctx sessionctx.Context, accessConds []exp
 }
 
 // GetPhysicalScan returns PhysicalTableScan for the LogicalTableScan.
-func (s *LogicalTableScan) GetPhysicalScan(schema *expression.Schema, stats *property.StatsInfo) *PhysicalTableScan {
-	ds := s.Source
-	ts := PhysicalTableScan{
+func (ts *LogicalTableScan) GetPhysicalScan(schema *expression.Schema, stats *property.StatsInfo) *PhysicalTableScan {
+	ds := ts.Source
+	pts := PhysicalTableScan{
 		Table:           ds.tableInfo,
 		Columns:         ds.Columns,
 		TableAsName:     ds.TableAsName,
 		DBName:          ds.DBName,
 		isPartition:     ds.isPartition,
 		physicalTableID: ds.physicalTableID,
-		Ranges:          s.Ranges,
-		AccessCondition: s.AccessConds,
-	}.Init(s.ctx, s.blockOffset)
-	ts.stats = stats
-	ts.SetSchema(schema.Clone())
-	if ts.Table.PKIsHandle {
-		if pkColInfo := ts.Table.GetPkColInfo(); pkColInfo != nil {
+		Ranges:          ts.Ranges,
+		AccessCondition: ts.AccessConds,
+	}.Init(ts.ctx, ts.blockOffset)
+	pts.stats = stats
+	pts.SetSchema(schema.Clone())
+	if pts.Table.PKIsHandle {
+		if pkColInfo := pts.Table.GetPkColInfo(); pkColInfo != nil {
 			if ds.statisticTable.Columns[pkColInfo.ID] != nil {
-				ts.Hist = &ds.statisticTable.Columns[pkColInfo.ID].Histogram
+				pts.Hist = &ds.statisticTable.Columns[pkColInfo.ID].Histogram
 			}
 		}
 	}
-	return ts
+	return pts
 }
 
 // GetPhysicalIndexScan returns PhysicalIndexScan for the logical IndexScan.
-func (s *LogicalIndexScan) GetPhysicalIndexScan(schema *expression.Schema, stats *property.StatsInfo) *PhysicalIndexScan {
-	ds := s.Source
-	is := PhysicalIndexScan{
+func (is *LogicalIndexScan) GetPhysicalIndexScan(schema *expression.Schema, stats *property.StatsInfo) *PhysicalIndexScan {
+	ds := is.Source
+	pis := PhysicalIndexScan{
 		Table:            ds.tableInfo,
 		TableAsName:      ds.TableAsName,
 		DBName:           ds.DBName,
-		Columns:          s.Columns,
-		Index:            s.Index,
-		IdxCols:          s.IdxCols,
-		IdxColLens:       s.IdxColLens,
-		AccessCondition:  s.AccessConds,
-		Ranges:           s.Ranges,
+		Columns:          is.Columns,
+		Index:            is.Index,
+		IdxCols:          is.IdxCols,
+		IdxColLens:       is.IdxColLens,
+		AccessCondition:  is.AccessConds,
+		Ranges:           is.Ranges,
 		dataSourceSchema: ds.schema,
 		isPartition:      ds.isPartition,
 		physicalTableID:  ds.physicalTableID,
 	}.Init(ds.ctx, ds.blockOffset)
-	is.stats = stats
-	is.initSchema(s.FullIdxCols, s.IsDoubleRead)
-	return is
+	pis.stats = stats
+	pis.initSchema(is.FullIdxCols, is.IsDoubleRead)
+	return pis
 }
 
 // convertToTableScan converts the DataSource to table scan.

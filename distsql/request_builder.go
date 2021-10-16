@@ -186,7 +186,7 @@ func (builder *RequestBuilder) SetKeyRanges(keyRanges []kv.KeyRange) *RequestBui
 
 // SetStartTS sets "StartTS" for "kv.Request".
 func (builder *RequestBuilder) SetStartTS(startTS uint64) *RequestBuilder {
-	builder.Request.StartTs = startTS
+	builder.Request.StartTS = startTS
 	return builder
 }
 

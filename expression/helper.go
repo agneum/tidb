@@ -20,6 +20,7 @@ import (
 	"time"
 
 	"github.com/pingcap/failpoint"
+
 	"github.com/pingcap/tidb/parser/ast"
 	"github.com/pingcap/tidb/parser/mysql"
 	"github.com/pingcap/tidb/parser/terror"
@@ -163,5 +164,5 @@ func getStmtTimestamp(ctx sessionctx.Context) (time.Time, error) {
 		return time.Unix(timestamp, 0), nil
 	}
 	stmtCtx := ctx.GetSessionVars().StmtCtx
-	return stmtCtx.GetOrStoreStmtCache(stmtctx.StmtNowTsCacheKey, time.Now()).(time.Time), nil
+	return stmtCtx.GetOrStoreStmtCache(stmtctx.StmtNowTSCacheKey, time.Now()).(time.Time), nil
 }

@@ -31,14 +31,14 @@ type MPPTaskMeta interface {
 type MPPTask struct {
 	Meta    MPPTaskMeta // on which store this task will execute
 	ID      int64       // mppTaskID
-	StartTs uint64
+	StartTS uint64
 	TableID int64 // physical table id
 }
 
 // ToPB generates the pb structure.
 func (t *MPPTask) ToPB() *mpp.TaskMeta {
 	meta := &mpp.TaskMeta{
-		StartTs: t.StartTs,
+		StartTs: t.StartTS,
 		TaskId:  t.ID,
 	}
 	if t.ID != -1 {

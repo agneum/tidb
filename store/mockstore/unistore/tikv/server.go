@@ -29,14 +29,15 @@ import (
 	"github.com/pingcap/kvproto/pkg/mpp"
 	"github.com/pingcap/kvproto/pkg/tikvpb"
 	"github.com/pingcap/log"
+	"github.com/pingcap/tipb/go-tipb"
+	"go.uber.org/zap"
+
 	"github.com/pingcap/tidb/kv"
 	"github.com/pingcap/tidb/store/mockstore/unistore/client"
 	"github.com/pingcap/tidb/store/mockstore/unistore/cophandler"
 	"github.com/pingcap/tidb/store/mockstore/unistore/tikv/dbreader"
 	"github.com/pingcap/tidb/store/mockstore/unistore/tikv/pberror"
 	"github.com/pingcap/tidb/store/mockstore/unistore/util/lockwaiter"
-	"github.com/pingcap/tipb/go-tipb"
-	"go.uber.org/zap"
 )
 
 var _ tikvpb.TikvServer = new(Server)
@@ -623,8 +624,8 @@ func (svr *Server) RawCoprocessor(context.Context, *kvrpcpb.RawCoprocessorReques
 	panic("unimplemented")
 }
 
-func (mrm *MockRegionManager) removeMPPTaskHandler(taskID int64, storeID uint64) error {
-	set := mrm.getMPPTaskSet(storeID)
+func (rm *MockRegionManager) removeMPPTaskHandler(taskID int64, storeID uint64) error {
+	set := rm.getMPPTaskSet(storeID)
 	if set == nil {
 		return errors.New("cannot find mpp task set for store")
 	}

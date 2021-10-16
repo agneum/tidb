@@ -25,21 +25,21 @@ import (
 	math2 "github.com/pingcap/tidb/util/math"
 )
 
-func (b *builtinArithmeticMultiplyRealSig) vectorized() bool {
+func (s *builtinArithmeticMultiplyRealSig) vectorized() bool {
 	return true
 }
 
-func (b *builtinArithmeticMultiplyRealSig) vecEvalReal(input *chunk.Chunk, result *chunk.Column) error {
-	if err := b.args[0].VecEvalReal(b.ctx, input, result); err != nil {
+func (s *builtinArithmeticMultiplyRealSig) vecEvalReal(input *chunk.Chunk, result *chunk.Column) error {
+	if err := s.args[0].VecEvalReal(s.ctx, input, result); err != nil {
 		return err
 	}
 	n := input.NumRows()
-	buf, err := b.bufAllocator.get()
+	buf, err := s.bufAllocator.get()
 	if err != nil {
 		return err
 	}
-	defer b.bufAllocator.put(buf)
-	if err := b.args[1].VecEvalReal(b.ctx, input, buf); err != nil {
+	defer s.bufAllocator.put(buf)
+	if err := s.args[1].VecEvalReal(s.ctx, input, buf); err != nil {
 		return err
 	}
 
@@ -52,27 +52,27 @@ func (b *builtinArithmeticMultiplyRealSig) vecEvalReal(input *chunk.Chunk, resul
 			if result.IsNull(i) {
 				continue
 			}
-			return types.ErrOverflow.GenWithStackByArgs("DOUBLE", fmt.Sprintf("(%s * %s)", b.args[0].String(), b.args[1].String()))
+			return types.ErrOverflow.GenWithStackByArgs("DOUBLE", fmt.Sprintf("(%s * %s)", s.args[0].String(), s.args[1].String()))
 		}
 	}
 	return nil
 }
 
-func (b *builtinArithmeticDivideDecimalSig) vectorized() bool {
+func (s *builtinArithmeticDivideDecimalSig) vectorized() bool {
 	return true
 }
 
-func (b *builtinArithmeticDivideDecimalSig) vecEvalDecimal(input *chunk.Chunk, result *chunk.Column) error {
-	if err := b.args[0].VecEvalDecimal(b.ctx, input, result); err != nil {
+func (s *builtinArithmeticDivideDecimalSig) vecEvalDecimal(input *chunk.Chunk, result *chunk.Column) error {
+	if err := s.args[0].VecEvalDecimal(s.ctx, input, result); err != nil {
 		return err
 	}
 	n := input.NumRows()
-	buf, err := b.bufAllocator.get()
+	buf, err := s.bufAllocator.get()
 	if err != nil {
 		return err
 	}
-	defer b.bufAllocator.put(buf)
-	if err := b.args[1].VecEvalDecimal(b.ctx, input, buf); err != nil {
+	defer s.bufAllocator.put(buf)
+	if err := s.args[1].VecEvalDecimal(s.ctx, input, buf); err != nil {
 		return err
 	}
 
@@ -81,14 +81,14 @@ func (b *builtinArithmeticDivideDecimalSig) vecEvalDecimal(input *chunk.Chunk, r
 	y := buf.Decimals()
 	var to types.MyDecimal
 	var frac int
-	sc := b.ctx.GetSessionVars().StmtCtx
+	sc := s.ctx.GetSessionVars().StmtCtx
 	for i := 0; i < n; i++ {
 		if result.IsNull(i) {
 			continue
 		}
 		err = types.DecimalDiv(&x[i], &y[i], &to, types.DivFracIncr)
 		if err == types.ErrDivByZero {
-			if err = handleDivisionByZeroError(b.ctx); err != nil {
+			if err = handleDivisionByZeroError(s.ctx); err != nil {
 				return err
 			}
 			result.SetNull(i, true)
@@ -99,13 +99,13 @@ func (b *builtinArithmeticDivideDecimalSig) vecEvalDecimal(input *chunk.Chunk, r
 			}
 		} else if err == nil {
 			_, frac = to.PrecisionAndFrac()
-			if frac < b.baseBuiltinFunc.tp.Decimal {
-				if err = to.Round(&to, b.baseBuiltinFunc.tp.Decimal, types.ModeHalfEven); err != nil {
+			if frac < s.baseBuiltinFunc.tp.Decimal {
+				if err = to.Round(&to, s.baseBuiltinFunc.tp.Decimal, types.ModeHalfEven); err != nil {
 					return err
 				}
 			}
 		} else if err == types.ErrOverflow {
-			return types.ErrOverflow.GenWithStackByArgs("DECIMAL", fmt.Sprintf("(%s / %s)", b.args[0].String(), b.args[1].String()))
+			return types.ErrOverflow.GenWithStackByArgs("DECIMAL", fmt.Sprintf("(%s / %s)", s.args[0].String(), s.args[1].String()))
 		} else {
 			return err
 		}
@@ -114,21 +114,21 @@ func (b *builtinArithmeticDivideDecimalSig) vecEvalDecimal(input *chunk.Chunk, r
 	return nil
 }
 
-func (b *builtinArithmeticModIntUnsignedUnsignedSig) vectorized() bool {
+func (s *builtinArithmeticModIntUnsignedUnsignedSig) vectorized() bool {
 	return true
 }
 
-func (b *builtinArithmeticModIntUnsignedUnsignedSig) vecEvalInt(input *chunk.Chunk, result *chunk.Column) error {
-	lh, err := b.bufAllocator.get()
+func (s *builtinArithmeticModIntUnsignedUnsignedSig) vecEvalInt(input *chunk.Chunk, result *chunk.Column) error {
+	lh, err := s.bufAllocator.get()
 	if err != nil {
 		return err
 	}
-	defer b.bufAllocator.put(lh)
-	if err := b.args[0].VecEvalInt(b.ctx, input, lh); err != nil {
+	defer s.bufAllocator.put(lh)
+	if err := s.args[0].VecEvalInt(s.ctx, input, lh); err != nil {
 		return err
 	}
 	// reuse result as rh to avoid buf allocate
-	if err := b.args[1].VecEvalInt(b.ctx, input, result); err != nil {
+	if err := s.args[1].VecEvalInt(s.ctx, input, result); err != nil {
 		return err
 	}
 
@@ -142,7 +142,7 @@ func (b *builtinArithmeticModIntUnsignedUnsignedSig) vecEvalInt(input *chunk.Chu
 			if rh.IsNull(i) {
 				continue
 			}
-			if err := handleDivisionByZeroError(b.ctx); err != nil {
+			if err := handleDivisionByZeroError(s.ctx); err != nil {
 				return err
 			}
 			rh.SetNull(i, true)
@@ -158,22 +158,22 @@ func (b *builtinArithmeticModIntUnsignedUnsignedSig) vecEvalInt(input *chunk.Chu
 	return nil
 }
 
-func (b *builtinArithmeticModIntUnsignedSignedSig) vectorized() bool {
+func (s *builtinArithmeticModIntUnsignedSignedSig) vectorized() bool {
 	return true
 }
 
-func (b *builtinArithmeticModIntUnsignedSignedSig) vecEvalInt(input *chunk.Chunk, result *chunk.Column) error {
-	lh, err := b.bufAllocator.get()
+func (s *builtinArithmeticModIntUnsignedSignedSig) vecEvalInt(input *chunk.Chunk, result *chunk.Column) error {
+	lh, err := s.bufAllocator.get()
 	if err != nil {
 		return err
 	}
-	defer b.bufAllocator.put(lh)
+	defer s.bufAllocator.put(lh)
 
-	if err := b.args[0].VecEvalInt(b.ctx, input, lh); err != nil {
+	if err := s.args[0].VecEvalInt(s.ctx, input, lh); err != nil {
 		return err
 	}
 	// reuse result as rh to avoid buf allocate
-	if err := b.args[1].VecEvalInt(b.ctx, input, result); err != nil {
+	if err := s.args[1].VecEvalInt(s.ctx, input, result); err != nil {
 		return err
 	}
 	rh := result
@@ -186,7 +186,7 @@ func (b *builtinArithmeticModIntUnsignedSignedSig) vecEvalInt(input *chunk.Chunk
 			if rh.IsNull(i) {
 				continue
 			}
-			if err := handleDivisionByZeroError(b.ctx); err != nil {
+			if err := handleDivisionByZeroError(s.ctx); err != nil {
 				return err
 			}
 			rh.SetNull(i, true)
@@ -206,22 +206,22 @@ func (b *builtinArithmeticModIntUnsignedSignedSig) vecEvalInt(input *chunk.Chunk
 	return nil
 }
 
-func (b *builtinArithmeticModIntSignedUnsignedSig) vectorized() bool {
+func (s *builtinArithmeticModIntSignedUnsignedSig) vectorized() bool {
 	return true
 }
 
-func (b *builtinArithmeticModIntSignedUnsignedSig) vecEvalInt(input *chunk.Chunk, result *chunk.Column) error {
-	lh, err := b.bufAllocator.get()
+func (s *builtinArithmeticModIntSignedUnsignedSig) vecEvalInt(input *chunk.Chunk, result *chunk.Column) error {
+	lh, err := s.bufAllocator.get()
 	if err != nil {
 		return err
 	}
-	defer b.bufAllocator.put(lh)
+	defer s.bufAllocator.put(lh)
 
-	if err := b.args[0].VecEvalInt(b.ctx, input, lh); err != nil {
+	if err := s.args[0].VecEvalInt(s.ctx, input, lh); err != nil {
 		return err
 	}
 	// reuse result as rh to avoid buf allocate
-	if err := b.args[1].VecEvalInt(b.ctx, input, result); err != nil {
+	if err := s.args[1].VecEvalInt(s.ctx, input, result); err != nil {
 		return err
 	}
 	rh := result
@@ -234,7 +234,7 @@ func (b *builtinArithmeticModIntSignedUnsignedSig) vecEvalInt(input *chunk.Chunk
 			if rh.IsNull(i) {
 				continue
 			}
-			if err := handleDivisionByZeroError(b.ctx); err != nil {
+			if err := handleDivisionByZeroError(s.ctx); err != nil {
 				return err
 			}
 			rh.SetNull(i, true)
@@ -254,22 +254,22 @@ func (b *builtinArithmeticModIntSignedUnsignedSig) vecEvalInt(input *chunk.Chunk
 	return nil
 }
 
-func (b *builtinArithmeticModIntSignedSignedSig) vectorized() bool {
+func (s *builtinArithmeticModIntSignedSignedSig) vectorized() bool {
 	return true
 }
 
-func (b *builtinArithmeticModIntSignedSignedSig) vecEvalInt(input *chunk.Chunk, result *chunk.Column) error {
-	lh, err := b.bufAllocator.get()
+func (s *builtinArithmeticModIntSignedSignedSig) vecEvalInt(input *chunk.Chunk, result *chunk.Column) error {
+	lh, err := s.bufAllocator.get()
 	if err != nil {
 		return err
 	}
-	defer b.bufAllocator.put(lh)
+	defer s.bufAllocator.put(lh)
 
-	if err := b.args[0].VecEvalInt(b.ctx, input, lh); err != nil {
+	if err := s.args[0].VecEvalInt(s.ctx, input, lh); err != nil {
 		return err
 	}
 	// reuse result as rh to avoid buf allocate
-	if err := b.args[1].VecEvalInt(b.ctx, input, result); err != nil {
+	if err := s.args[1].VecEvalInt(s.ctx, input, result); err != nil {
 		return err
 	}
 	rh := result
@@ -282,7 +282,7 @@ func (b *builtinArithmeticModIntSignedSignedSig) vecEvalInt(input *chunk.Chunk, 
 			if rh.IsNull(i) {
 				continue
 			}
-			if err := handleDivisionByZeroError(b.ctx); err != nil {
+			if err := handleDivisionByZeroError(s.ctx); err != nil {
 				return err
 			}
 			rh.SetNull(i, true)
@@ -298,21 +298,21 @@ func (b *builtinArithmeticModIntSignedSignedSig) vecEvalInt(input *chunk.Chunk, 
 	return nil
 }
 
-func (b *builtinArithmeticMinusRealSig) vectorized() bool {
+func (s *builtinArithmeticMinusRealSig) vectorized() bool {
 	return true
 }
 
-func (b *builtinArithmeticMinusRealSig) vecEvalReal(input *chunk.Chunk, result *chunk.Column) error {
-	if err := b.args[0].VecEvalReal(b.ctx, input, result); err != nil {
+func (s *builtinArithmeticMinusRealSig) vecEvalReal(input *chunk.Chunk, result *chunk.Column) error {
+	if err := s.args[0].VecEvalReal(s.ctx, input, result); err != nil {
 		return err
 	}
 	n := input.NumRows()
-	buf, err := b.bufAllocator.get()
+	buf, err := s.bufAllocator.get()
 	if err != nil {
 		return err
 	}
-	defer b.bufAllocator.put(buf)
-	if err := b.args[1].VecEvalReal(b.ctx, input, buf); err != nil {
+	defer s.bufAllocator.put(buf)
+	if err := s.args[1].VecEvalReal(s.ctx, input, buf); err != nil {
 		return err
 	}
 
@@ -324,28 +324,28 @@ func (b *builtinArithmeticMinusRealSig) vecEvalReal(input *chunk.Chunk, result *
 			if result.IsNull(i) {
 				continue
 			}
-			return types.ErrOverflow.GenWithStackByArgs("DOUBLE", fmt.Sprintf("(%s - %s)", b.args[0].String(), b.args[1].String()))
+			return types.ErrOverflow.GenWithStackByArgs("DOUBLE", fmt.Sprintf("(%s - %s)", s.args[0].String(), s.args[1].String()))
 		}
 		x[i] = x[i] - y[i]
 	}
 	return nil
 }
 
-func (b *builtinArithmeticMinusDecimalSig) vectorized() bool {
+func (s *builtinArithmeticMinusDecimalSig) vectorized() bool {
 	return true
 }
 
-func (b *builtinArithmeticMinusDecimalSig) vecEvalDecimal(input *chunk.Chunk, result *chunk.Column) error {
-	if err := b.args[0].VecEvalDecimal(b.ctx, input, result); err != nil {
+func (s *builtinArithmeticMinusDecimalSig) vecEvalDecimal(input *chunk.Chunk, result *chunk.Column) error {
+	if err := s.args[0].VecEvalDecimal(s.ctx, input, result); err != nil {
 		return err
 	}
 	n := input.NumRows()
-	buf, err := b.bufAllocator.get()
+	buf, err := s.bufAllocator.get()
 	if err != nil {
 		return err
 	}
-	defer b.bufAllocator.put(buf)
-	if err := b.args[1].VecEvalDecimal(b.ctx, input, buf); err != nil {
+	defer s.bufAllocator.put(buf)
+	if err := s.args[1].VecEvalDecimal(s.ctx, input, buf); err != nil {
 		return err
 	}
 
@@ -359,7 +359,7 @@ func (b *builtinArithmeticMinusDecimalSig) vecEvalDecimal(input *chunk.Chunk, re
 		}
 		if err = types.DecimalSub(&x[i], &y[i], &to); err != nil {
 			if err == types.ErrOverflow {
-				err = types.ErrOverflow.GenWithStackByArgs("DECIMAL", fmt.Sprintf("(%s - %s)", b.args[0].String(), b.args[1].String()))
+				err = types.ErrOverflow.GenWithStackByArgs("DECIMAL", fmt.Sprintf("(%s - %s)", s.args[0].String(), s.args[1].String()))
 			}
 			return err
 		}
@@ -368,22 +368,22 @@ func (b *builtinArithmeticMinusDecimalSig) vecEvalDecimal(input *chunk.Chunk, re
 	return nil
 }
 
-func (b *builtinArithmeticMinusIntSig) vectorized() bool {
+func (s *builtinArithmeticMinusIntSig) vectorized() bool {
 	return true
 }
 
-func (b *builtinArithmeticMinusIntSig) vecEvalInt(input *chunk.Chunk, result *chunk.Column) error {
-	lh, err := b.bufAllocator.get()
+func (s *builtinArithmeticMinusIntSig) vecEvalInt(input *chunk.Chunk, result *chunk.Column) error {
+	lh, err := s.bufAllocator.get()
 	if err != nil {
 		return err
 	}
-	defer b.bufAllocator.put(lh)
+	defer s.bufAllocator.put(lh)
 
-	if err := b.args[0].VecEvalInt(b.ctx, input, lh); err != nil {
+	if err := s.args[0].VecEvalInt(s.ctx, input, lh); err != nil {
 		return err
 	}
 
-	if err := b.args[1].VecEvalInt(b.ctx, input, result); err != nil {
+	if err := s.args[1].VecEvalInt(s.ctx, input, result); err != nil {
 		return err
 	}
 
@@ -394,9 +394,9 @@ func (b *builtinArithmeticMinusIntSig) vecEvalInt(input *chunk.Chunk, result *ch
 	rhi64s := rh.Int64s()
 	resulti64s := result.Int64s()
 
-	forceToSigned := b.ctx.GetSessionVars().SQLMode.HasNoUnsignedSubtractionMode()
-	isLHSUnsigned := mysql.HasUnsignedFlag(b.args[0].GetType().Flag)
-	isRHSUnsigned := mysql.HasUnsignedFlag(b.args[1].GetType().Flag)
+	forceToSigned := s.ctx.GetSessionVars().SQLMode.HasNoUnsignedSubtractionMode()
+	isLHSUnsigned := mysql.HasUnsignedFlag(s.args[0].GetType().Flag)
+	isRHSUnsigned := mysql.HasUnsignedFlag(s.args[1].GetType().Flag)
 
 	errType := "BIGINT UNSIGNED"
 	signed := forceToSigned || (!isLHSUnsigned && !isRHSUnsigned)
@@ -406,12 +406,12 @@ func (b *builtinArithmeticMinusIntSig) vecEvalInt(input *chunk.Chunk, result *ch
 	for i := 0; i < len(lhi64s); i++ {
 		lh, rh := lhi64s[i], rhi64s[i]
 
-		overflow := b.overflowCheck(isLHSUnsigned, isRHSUnsigned, signed, lh, rh)
+		overflow := s.overflowCheck(isLHSUnsigned, isRHSUnsigned, signed, lh, rh)
 		if overflow {
 			if result.IsNull(i) {
 				continue
 			}
-			return types.ErrOverflow.GenWithStackByArgs(errType, fmt.Sprintf("(%s - %s)", b.args[0].String(), b.args[1].String()))
+			return types.ErrOverflow.GenWithStackByArgs(errType, fmt.Sprintf("(%s - %s)", s.args[0].String(), s.args[1].String()))
 		}
 
 		resulti64s[i] = lh - rh
@@ -457,21 +457,21 @@ func (b *builtinArithmeticModRealSig) vecEvalReal(input *chunk.Chunk, result *ch
 	return nil
 }
 
-func (b *builtinArithmeticModDecimalSig) vectorized() bool {
+func (s *builtinArithmeticModDecimalSig) vectorized() bool {
 	return true
 }
 
-func (b *builtinArithmeticModDecimalSig) vecEvalDecimal(input *chunk.Chunk, result *chunk.Column) error {
-	if err := b.args[0].VecEvalDecimal(b.ctx, input, result); err != nil {
+func (s *builtinArithmeticModDecimalSig) vecEvalDecimal(input *chunk.Chunk, result *chunk.Column) error {
+	if err := s.args[0].VecEvalDecimal(s.ctx, input, result); err != nil {
 		return err
 	}
 	n := input.NumRows()
-	buf, err := b.bufAllocator.get()
+	buf, err := s.bufAllocator.get()
 	if err != nil {
 		return err
 	}
-	defer b.bufAllocator.put(buf)
-	if err := b.args[1].VecEvalDecimal(b.ctx, input, buf); err != nil {
+	defer s.bufAllocator.put(buf)
+	if err := s.args[1].VecEvalDecimal(s.ctx, input, buf); err != nil {
 		return err
 	}
 
@@ -485,7 +485,7 @@ func (b *builtinArithmeticModDecimalSig) vecEvalDecimal(input *chunk.Chunk, resu
 		}
 		err = types.DecimalMod(&x[i], &y[i], &to)
 		if err == types.ErrDivByZero {
-			if err := handleDivisionByZeroError(b.ctx); err != nil {
+			if err := handleDivisionByZeroError(s.ctx); err != nil {
 				return err
 			}
 			result.SetNull(i, true)
@@ -499,21 +499,21 @@ func (b *builtinArithmeticModDecimalSig) vecEvalDecimal(input *chunk.Chunk, resu
 	return nil
 }
 
-func (b *builtinArithmeticPlusRealSig) vectorized() bool {
+func (s *builtinArithmeticPlusRealSig) vectorized() bool {
 	return true
 }
 
-func (b *builtinArithmeticPlusRealSig) vecEvalReal(input *chunk.Chunk, result *chunk.Column) error {
-	if err := b.args[0].VecEvalReal(b.ctx, input, result); err != nil {
+func (s *builtinArithmeticPlusRealSig) vecEvalReal(input *chunk.Chunk, result *chunk.Column) error {
+	if err := s.args[0].VecEvalReal(s.ctx, input, result); err != nil {
 		return err
 	}
 	n := input.NumRows()
-	buf, err := b.bufAllocator.get()
+	buf, err := s.bufAllocator.get()
 	if err != nil {
 		return err
 	}
-	defer b.bufAllocator.put(buf)
-	if err := b.args[1].VecEvalReal(b.ctx, input, buf); err != nil {
+	defer s.bufAllocator.put(buf)
+	if err := s.args[1].VecEvalReal(s.ctx, input, buf); err != nil {
 		return err
 	}
 
@@ -525,28 +525,28 @@ func (b *builtinArithmeticPlusRealSig) vecEvalReal(input *chunk.Chunk, result *c
 			if result.IsNull(i) {
 				continue
 			}
-			return types.ErrOverflow.GenWithStackByArgs("DOUBLE", fmt.Sprintf("(%s + %s)", b.args[0].String(), b.args[1].String()))
+			return types.ErrOverflow.GenWithStackByArgs("DOUBLE", fmt.Sprintf("(%s + %s)", s.args[0].String(), s.args[1].String()))
 		}
 		x[i] = x[i] + y[i]
 	}
 	return nil
 }
 
-func (b *builtinArithmeticMultiplyDecimalSig) vectorized() bool {
+func (s *builtinArithmeticMultiplyDecimalSig) vectorized() bool {
 	return true
 }
 
-func (b *builtinArithmeticMultiplyDecimalSig) vecEvalDecimal(input *chunk.Chunk, result *chunk.Column) error {
-	if err := b.args[0].VecEvalDecimal(b.ctx, input, result); err != nil {
+func (s *builtinArithmeticMultiplyDecimalSig) vecEvalDecimal(input *chunk.Chunk, result *chunk.Column) error {
+	if err := s.args[0].VecEvalDecimal(s.ctx, input, result); err != nil {
 		return err
 	}
 	n := input.NumRows()
-	buf, err := b.bufAllocator.get()
+	buf, err := s.bufAllocator.get()
 	if err != nil {
 		return err
 	}
-	defer b.bufAllocator.put(buf)
-	if err := b.args[1].VecEvalDecimal(b.ctx, input, buf); err != nil {
+	defer s.bufAllocator.put(buf)
+	if err := s.args[1].VecEvalDecimal(s.ctx, input, buf); err != nil {
 		return err
 	}
 
@@ -561,7 +561,7 @@ func (b *builtinArithmeticMultiplyDecimalSig) vecEvalDecimal(input *chunk.Chunk,
 		err = types.DecimalMul(&x[i], &y[i], &to)
 		if err != nil && !terror.ErrorEqual(err, types.ErrTruncated) {
 			if err == types.ErrOverflow {
-				err = types.ErrOverflow.GenWithStackByArgs("DECIMAL", fmt.Sprintf("(%s * %s)", b.args[0].String(), b.args[1].String()))
+				err = types.ErrOverflow.GenWithStackByArgs("DECIMAL", fmt.Sprintf("(%s * %s)", s.args[0].String(), s.args[1].String()))
 			}
 			return err
 		}
@@ -570,23 +570,23 @@ func (b *builtinArithmeticMultiplyDecimalSig) vecEvalDecimal(input *chunk.Chunk,
 	return nil
 }
 
-func (b *builtinArithmeticIntDivideDecimalSig) vectorized() bool {
+func (s *builtinArithmeticIntDivideDecimalSig) vectorized() bool {
 	return true
 }
 
-func (b *builtinArithmeticIntDivideDecimalSig) vecEvalInt(input *chunk.Chunk, result *chunk.Column) error {
-	sc := b.ctx.GetSessionVars().StmtCtx
+func (s *builtinArithmeticIntDivideDecimalSig) vecEvalInt(input *chunk.Chunk, result *chunk.Column) error {
+	sc := s.ctx.GetSessionVars().StmtCtx
 	n := input.NumRows()
 	var err error
 	var buf [2]*chunk.Column
 	var num [2][]types.MyDecimal
-	for i, arg := range b.args {
-		if buf[i], err = b.bufAllocator.get(); err != nil {
+	for i, arg := range s.args {
+		if buf[i], err = s.bufAllocator.get(); err != nil {
 			return err
 		}
-		defer b.bufAllocator.put(buf[i])
+		defer s.bufAllocator.put(buf[i])
 
-		err = arg.VecEvalDecimal(b.ctx, input, buf[i])
+		err = arg.VecEvalDecimal(s.ctx, input, buf[i])
 		if err != nil {
 			return err
 		}
@@ -594,8 +594,8 @@ func (b *builtinArithmeticIntDivideDecimalSig) vecEvalInt(input *chunk.Chunk, re
 		num[i] = buf[i].Decimals()
 	}
 
-	isLHSUnsigned := mysql.HasUnsignedFlag(b.args[0].GetType().Flag)
-	isRHSUnsigned := mysql.HasUnsignedFlag(b.args[1].GetType().Flag)
+	isLHSUnsigned := mysql.HasUnsignedFlag(s.args[0].GetType().Flag)
+	isRHSUnsigned := mysql.HasUnsignedFlag(s.args[1].GetType().Flag)
 	isUnsigned := isLHSUnsigned || isRHSUnsigned
 
 	result.ResizeInt64(n, false)
@@ -609,7 +609,7 @@ func (b *builtinArithmeticIntDivideDecimalSig) vecEvalInt(input *chunk.Chunk, re
 		c := &types.MyDecimal{}
 		err = types.DecimalDiv(&num[0][i], &num[1][i], c, types.DivFracIncr)
 		if err == types.ErrDivByZero {
-			if err = handleDivisionByZeroError(b.ctx); err != nil {
+			if err = handleDivisionByZeroError(s.ctx); err != nil {
 				return err
 			}
 			result.SetNull(i, true)
@@ -649,22 +649,22 @@ func (b *builtinArithmeticIntDivideDecimalSig) vecEvalInt(input *chunk.Chunk, re
 	return nil
 }
 
-func (b *builtinArithmeticMultiplyIntSig) vectorized() bool {
+func (s *builtinArithmeticMultiplyIntSig) vectorized() bool {
 	return true
 }
 
-func (b *builtinArithmeticMultiplyIntSig) vecEvalInt(input *chunk.Chunk, result *chunk.Column) error {
-	if err := b.args[0].VecEvalInt(b.ctx, input, result); err != nil {
+func (s *builtinArithmeticMultiplyIntSig) vecEvalInt(input *chunk.Chunk, result *chunk.Column) error {
+	if err := s.args[0].VecEvalInt(s.ctx, input, result); err != nil {
 		return err
 	}
 	n := input.NumRows()
-	buf, err := b.bufAllocator.get()
+	buf, err := s.bufAllocator.get()
 	if err != nil {
 		return err
 	}
-	defer b.bufAllocator.put(buf)
+	defer s.bufAllocator.put(buf)
 
-	if err := b.args[1].VecEvalInt(b.ctx, input, buf); err != nil {
+	if err := s.args[1].VecEvalInt(s.ctx, input, buf); err != nil {
 		return err
 	}
 
@@ -680,7 +680,7 @@ func (b *builtinArithmeticMultiplyIntSig) vecEvalInt(input *chunk.Chunk, result 
 				continue
 			}
 			result.SetNull(i, true)
-			return types.ErrOverflow.GenWithStackByArgs("BIGINT", fmt.Sprintf("(%s * %s)", b.args[0].String(), b.args[1].String()))
+			return types.ErrOverflow.GenWithStackByArgs("BIGINT", fmt.Sprintf("(%s * %s)", s.args[0].String(), s.args[1].String()))
 		}
 
 		x[i] = tmp
@@ -689,21 +689,21 @@ func (b *builtinArithmeticMultiplyIntSig) vecEvalInt(input *chunk.Chunk, result 
 	return nil
 }
 
-func (b *builtinArithmeticDivideRealSig) vectorized() bool {
+func (s *builtinArithmeticDivideRealSig) vectorized() bool {
 	return true
 }
 
-func (b *builtinArithmeticDivideRealSig) vecEvalReal(input *chunk.Chunk, result *chunk.Column) error {
-	if err := b.args[0].VecEvalReal(b.ctx, input, result); err != nil {
+func (s *builtinArithmeticDivideRealSig) vecEvalReal(input *chunk.Chunk, result *chunk.Column) error {
+	if err := s.args[0].VecEvalReal(s.ctx, input, result); err != nil {
 		return err
 	}
 	n := input.NumRows()
-	buf, err := b.bufAllocator.get()
+	buf, err := s.bufAllocator.get()
 	if err != nil {
 		return err
 	}
-	defer b.bufAllocator.put(buf)
-	if err := b.args[1].VecEvalReal(b.ctx, input, buf); err != nil {
+	defer s.bufAllocator.put(buf)
+	if err := s.args[1].VecEvalReal(s.ctx, input, buf); err != nil {
 		return err
 	}
 
@@ -715,7 +715,7 @@ func (b *builtinArithmeticDivideRealSig) vecEvalReal(input *chunk.Chunk, result 
 			continue
 		}
 		if y[i] == 0 {
-			if err := handleDivisionByZeroError(b.ctx); err != nil {
+			if err := handleDivisionByZeroError(s.ctx); err != nil {
 				return err
 			}
 			result.SetNull(i, true)
@@ -724,29 +724,29 @@ func (b *builtinArithmeticDivideRealSig) vecEvalReal(input *chunk.Chunk, result 
 
 		x[i] = x[i] / y[i]
 		if math.IsInf(x[i], 0) {
-			return types.ErrOverflow.GenWithStackByArgs("DOUBLE", fmt.Sprintf("(%s / %s)", b.args[0].String(), b.args[1].String()))
+			return types.ErrOverflow.GenWithStackByArgs("DOUBLE", fmt.Sprintf("(%s / %s)", s.args[0].String(), s.args[1].String()))
 		}
 	}
 	return nil
 }
 
-func (b *builtinArithmeticIntDivideIntSig) vectorized() bool {
+func (s *builtinArithmeticIntDivideIntSig) vectorized() bool {
 	return true
 }
 
-func (b *builtinArithmeticIntDivideIntSig) vecEvalInt(input *chunk.Chunk, result *chunk.Column) error {
-	lhsBuf, err := b.bufAllocator.get()
+func (s *builtinArithmeticIntDivideIntSig) vecEvalInt(input *chunk.Chunk, result *chunk.Column) error {
+	lhsBuf, err := s.bufAllocator.get()
 	if err != nil {
 		return err
 	}
-	defer b.bufAllocator.put(lhsBuf)
+	defer s.bufAllocator.put(lhsBuf)
 
-	if err := b.args[0].VecEvalInt(b.ctx, input, lhsBuf); err != nil {
+	if err := s.args[0].VecEvalInt(s.ctx, input, lhsBuf); err != nil {
 		return err
 	}
 
 	// reuse result as rhsBuf to avoid buf allocate
-	if err := b.args[1].VecEvalInt(b.ctx, input, result); err != nil {
+	if err := s.args[1].VecEvalInt(s.ctx, input, result); err != nil {
 		return err
 	}
 
@@ -757,23 +757,23 @@ func (b *builtinArithmeticIntDivideIntSig) vecEvalInt(input *chunk.Chunk, result
 	rhsI64s := rhsBuf.Int64s()
 	resultI64s := result.Int64s()
 
-	isLHSUnsigned := mysql.HasUnsignedFlag(b.args[0].GetType().Flag)
-	isRHSUnsigned := mysql.HasUnsignedFlag(b.args[1].GetType().Flag)
+	isLHSUnsigned := mysql.HasUnsignedFlag(s.args[0].GetType().Flag)
+	isRHSUnsigned := mysql.HasUnsignedFlag(s.args[1].GetType().Flag)
 
 	switch {
 	case isLHSUnsigned && isRHSUnsigned:
-		err = b.divideUU(result, lhsI64s, rhsI64s, resultI64s)
+		err = s.divideUU(result, lhsI64s, rhsI64s, resultI64s)
 	case isLHSUnsigned && !isRHSUnsigned:
-		err = b.divideUS(result, lhsI64s, rhsI64s, resultI64s)
+		err = s.divideUS(result, lhsI64s, rhsI64s, resultI64s)
 	case !isLHSUnsigned && isRHSUnsigned:
-		err = b.divideSU(result, lhsI64s, rhsI64s, resultI64s)
+		err = s.divideSU(result, lhsI64s, rhsI64s, resultI64s)
 	case !isLHSUnsigned && !isRHSUnsigned:
-		err = b.divideSS(result, lhsI64s, rhsI64s, resultI64s)
+		err = s.divideSS(result, lhsI64s, rhsI64s, resultI64s)
 	}
 	return err
 }
 
-func (b *builtinArithmeticIntDivideIntSig) divideUU(result *chunk.Column, lhsI64s, rhsI64s, resultI64s []int64) error {
+func (s *builtinArithmeticIntDivideIntSig) divideUU(result *chunk.Column, lhsI64s, rhsI64s, resultI64s []int64) error {
 	for i := 0; i < len(lhsI64s); i++ {
 		if result.IsNull(i) {
 			continue
@@ -781,7 +781,7 @@ func (b *builtinArithmeticIntDivideIntSig) divideUU(result *chunk.Column, lhsI64
 		lhs, rhs := lhsI64s[i], rhsI64s[i]
 
 		if rhs == 0 {
-			if err := handleDivisionByZeroError(b.ctx); err != nil {
+			if err := handleDivisionByZeroError(s.ctx); err != nil {
 				return err
 			}
 			result.SetNull(i, true)
@@ -793,14 +793,14 @@ func (b *builtinArithmeticIntDivideIntSig) divideUU(result *chunk.Column, lhsI64
 	return nil
 }
 
-func (b *builtinArithmeticIntDivideIntSig) divideUS(result *chunk.Column, lhsI64s, rhsI64s, resultI64s []int64) error {
+func (s *builtinArithmeticIntDivideIntSig) divideUS(result *chunk.Column, lhsI64s, rhsI64s, resultI64s []int64) error {
 	for i := 0; i < len(lhsI64s); i++ {
 		if result.IsNull(i) {
 			continue
 		}
 		lhs, rhs := lhsI64s[i], rhsI64s[i]
 		if rhs == 0 {
-			if err := handleDivisionByZeroError(b.ctx); err != nil {
+			if err := handleDivisionByZeroError(s.ctx); err != nil {
 				return err
 			}
 			result.SetNull(i, true)
@@ -815,7 +815,7 @@ func (b *builtinArithmeticIntDivideIntSig) divideUS(result *chunk.Column, lhsI64
 	return nil
 }
 
-func (b *builtinArithmeticIntDivideIntSig) divideSU(result *chunk.Column, lhsI64s, rhsI64s, resultI64s []int64) error {
+func (s *builtinArithmeticIntDivideIntSig) divideSU(result *chunk.Column, lhsI64s, rhsI64s, resultI64s []int64) error {
 	for i := 0; i < len(lhsI64s); i++ {
 		if result.IsNull(i) {
 			continue
@@ -823,7 +823,7 @@ func (b *builtinArithmeticIntDivideIntSig) divideSU(result *chunk.Column, lhsI64
 		lhs, rhs := lhsI64s[i], rhsI64s[i]
 
 		if rhs == 0 {
-			if err := handleDivisionByZeroError(b.ctx); err != nil {
+			if err := handleDivisionByZeroError(s.ctx); err != nil {
 				return err
 			}
 			result.SetNull(i, true)
@@ -838,7 +838,7 @@ func (b *builtinArithmeticIntDivideIntSig) divideSU(result *chunk.Column, lhsI64
 	return nil
 }
 
-func (b *builtinArithmeticIntDivideIntSig) divideSS(result *chunk.Column, lhsI64s, rhsI64s, resultI64s []int64) error {
+func (s *builtinArithmeticIntDivideIntSig) divideSS(result *chunk.Column, lhsI64s, rhsI64s, resultI64s []int64) error {
 	for i := 0; i < len(lhsI64s); i++ {
 		if result.IsNull(i) {
 			continue
@@ -846,7 +846,7 @@ func (b *builtinArithmeticIntDivideIntSig) divideSS(result *chunk.Column, lhsI64
 		lhs, rhs := lhsI64s[i], rhsI64s[i]
 
 		if rhs == 0 {
-			if err := handleDivisionByZeroError(b.ctx); err != nil {
+			if err := handleDivisionByZeroError(s.ctx); err != nil {
 				return err
 			}
 			result.SetNull(i, true)

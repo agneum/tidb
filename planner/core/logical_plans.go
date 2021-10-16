@@ -17,6 +17,8 @@ package core
 import (
 	"math"
 
+	"go.uber.org/zap"
+
 	"github.com/pingcap/tidb/expression"
 	"github.com/pingcap/tidb/expression/aggregation"
 	"github.com/pingcap/tidb/infoschema"
@@ -32,7 +34,6 @@ import (
 	"github.com/pingcap/tidb/types"
 	"github.com/pingcap/tidb/util/logutil"
 	"github.com/pingcap/tidb/util/ranger"
-	"go.uber.org/zap"
 )
 
 var (
@@ -622,17 +623,17 @@ type LogicalIndexScan struct {
 }
 
 // MatchIndexProp checks if the indexScan can match the required property.
-func (p *LogicalIndexScan) MatchIndexProp(prop *property.PhysicalProperty) (match bool) {
+func (is *LogicalIndexScan) MatchIndexProp(prop *property.PhysicalProperty) (match bool) {
 	if prop.IsEmpty() {
 		return true
 	}
 	if all, _ := prop.AllSameOrder(); !all {
 		return false
 	}
-	for i, col := range p.IdxCols {
+	for i, col := range is.IdxCols {
 		if col.Equal(nil, prop.SortItems[0].Col) {
-			return matchIndicesProp(p.IdxCols[i:], p.IdxColLens[i:], prop.SortItems)
-		} else if i >= p.EqCondCount {
+			return matchIndicesProp(is.IdxCols[i:], is.IdxColLens[i:], prop.SortItems)
+		} else if i >= is.EqCondCount {
 			break
 		}
 	}
@@ -961,11 +962,11 @@ func (ds *DataSource) getPKIsHandleCol() *expression.Column {
 	return getPKIsHandleColFromSchema(ds.Columns, ds.schema, ds.tableInfo.PKIsHandle)
 }
 
-func (p *LogicalIndexScan) getPKIsHandleCol(schema *expression.Schema) *expression.Column {
-	// We cannot use p.Source.getPKIsHandleCol() here,
-	// Because we may re-prune p.Columns and p.schema during the transformation.
-	// That will make p.Columns different from p.Source.Columns.
-	return getPKIsHandleColFromSchema(p.Columns, schema, p.Source.tableInfo.PKIsHandle)
+func (is *LogicalIndexScan) getPKIsHandleCol(schema *expression.Schema) *expression.Column {
+	// We cannot use is.Source.getPKIsHandleCol() here,
+	// Because we may re-prune is.Columns and is.schema during the transformation.
+	// That will make is.Columns different from is.Source.Columns.
+	return getPKIsHandleColFromSchema(is.Columns, schema, is.Source.tableInfo.PKIsHandle)
 }
 
 // TableInfo returns the *TableInfo of data source.

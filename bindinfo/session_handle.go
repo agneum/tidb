@@ -41,7 +41,7 @@ func NewSessionBindHandle(parser *parser.Parser) *SessionHandle {
 // appendBindRecord adds the BindRecord to the cache, all the stale bindMetas are
 // removed from the cache after this operation.
 func (h *SessionHandle) appendBindRecord(hash string, meta *BindRecord) {
-	oldRecord := h.ch.getBindRecord(hash, meta.OriginalSQL, meta.Db)
+	oldRecord := h.ch.getBindRecord(hash, meta.OriginalSQL, meta.DB)
 	h.ch.setBindRecord(hash, meta)
 	updateMetrics(metrics.ScopeSession, oldRecord, meta, false)
 }
@@ -53,7 +53,7 @@ func (h *SessionHandle) CreateBindRecord(sctx sessionctx.Context, record *BindRe
 	if err != nil {
 		return err
 	}
-	record.Db = strings.ToLower(record.Db)
+	record.DB = strings.ToLower(record.DB)
 	now := types.NewTime(types.FromGoTime(time.Now().In(sctx.GetSessionVars().StmtCtx.TimeZone)), mysql.TypeTimestamp, 3)
 	for i := range record.Bindings {
 		record.Bindings[i].CreateTime = now
@@ -70,7 +70,7 @@ func (h *SessionHandle) DropBindRecord(originalSQL, db string, binding *Binding)
 	db = strings.ToLower(db)
 	oldRecord := h.GetBindRecord(originalSQL, db)
 	var newRecord *BindRecord
-	record := &BindRecord{OriginalSQL: originalSQL, Db: db}
+	record := &BindRecord{OriginalSQL: originalSQL, DB: db}
 	if binding != nil {
 		record.Bindings = append(record.Bindings, *binding)
 	}

@@ -27,12 +27,13 @@ import (
 	"time"
 
 	"github.com/pingcap/failpoint"
+	"github.com/tikv/client-go/v2/util"
+
 	"github.com/pingcap/tidb/sessionctx/stmtctx"
 	"github.com/pingcap/tidb/util/execdetails"
 	"github.com/pingcap/tidb/util/hack"
 	"github.com/pingcap/tidb/util/kvcache"
 	"github.com/pingcap/tidb/util/plancodec"
-	"github.com/tikv/client-go/v2/util"
 )
 
 // stmtSummaryByDigestKey defines key for stmtSummaryByDigestMap.summaryMap.
@@ -153,8 +154,8 @@ type stmtSummaryByDigestElement struct {
 	maxRocksdbBlockReadByte      uint64
 	// txn
 	commitCount          int64
-	sumGetCommitTsTime   time.Duration
-	maxGetCommitTsTime   time.Duration
+	sumGetCommitTSTime   time.Duration
+	maxGetCommitTSTime   time.Duration
 	sumPrewriteTime      time.Duration
 	maxPrewriteTime      time.Duration
 	sumCommitTime        time.Duration
@@ -730,9 +731,9 @@ func (ssElement *stmtSummaryByDigestElement) add(sei *StmtExecInfo, intervalSeco
 		if commitDetails.CommitTime > ssElement.maxCommitTime {
 			ssElement.maxCommitTime = commitDetails.CommitTime
 		}
-		ssElement.sumGetCommitTsTime += commitDetails.GetCommitTsTime
-		if commitDetails.GetCommitTsTime > ssElement.maxGetCommitTsTime {
-			ssElement.maxGetCommitTsTime = commitDetails.GetCommitTsTime
+		ssElement.sumGetCommitTSTime += commitDetails.GetCommitTsTime
+		if commitDetails.GetCommitTsTime > ssElement.maxGetCommitTSTime {
+			ssElement.maxGetCommitTSTime = commitDetails.GetCommitTsTime
 		}
 		resolveLockTime := atomic.LoadInt64(&commitDetails.ResolveLockTime)
 		ssElement.sumResolveLockTime += resolveLockTime

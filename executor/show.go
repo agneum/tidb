@@ -308,7 +308,7 @@ func (e *ShowExec) fetchShowBind() error {
 				return err
 			}
 			checker := visibleChecker{
-				defaultDB: bindData.Db,
+				defaultDB: bindData.DB,
 				ctx:       e.ctx,
 				is:        e.is,
 				manager:   privilege.GetPrivilegeManager(e.ctx),
@@ -321,7 +321,7 @@ func (e *ShowExec) fetchShowBind() error {
 			e.appendRow([]interface{}{
 				bindData.OriginalSQL,
 				hint.BindSQL,
-				bindData.Db,
+				bindData.DB,
 				hint.Status,
 				hint.CreateTime,
 				hint.UpdateTime,

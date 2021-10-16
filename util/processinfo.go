@@ -22,11 +22,12 @@ import (
 	"sync/atomic"
 	"time"
 
+	"github.com/tikv/client-go/v2/oracle"
+
 	"github.com/pingcap/tidb/parser/mysql"
 	"github.com/pingcap/tidb/session/txninfo"
 	"github.com/pingcap/tidb/sessionctx/stmtctx"
 	"github.com/pingcap/tidb/util/execdetails"
-	"github.com/tikv/client-go/v2/oracle"
 )
 
 // ProcessInfo is a struct used for show processlist statement.
@@ -88,7 +89,7 @@ func (pi *ProcessInfo) ToRowForShow(full bool) []interface{} {
 	}
 }
 
-func (pi *ProcessInfo) txnStartTs(tz *time.Location) (txnStart string) {
+func (pi *ProcessInfo) txnStartTS(tz *time.Location) (txnStart string) {
 	if pi.CurTxnStartTS > 0 {
 		physicalTime := oracle.GetTimeFromTS(pi.CurTxnStartTS)
 		txnStart = fmt.Sprintf("%s(%d)", physicalTime.In(tz).Format("01-02 15:04:05.000"), pi.CurTxnStartTS)
@@ -109,7 +110,7 @@ func (pi *ProcessInfo) ToRow(tz *time.Location) []interface{} {
 			diskConsumed = pi.StmtCtx.DiskTracker.BytesConsumed()
 		}
 	}
-	return append(pi.ToRowForShow(true), pi.Digest, bytesConsumed, diskConsumed, pi.txnStartTs(tz))
+	return append(pi.ToRowForShow(true), pi.Digest, bytesConsumed, diskConsumed, pi.txnStartTS(tz))
 }
 
 // ascServerStatus is a slice of all defined server status in ascending order.
@@ -232,7 +233,7 @@ func (g *GlobalConnID) NextID() uint64 {
 //   `isTruncated` indicates that older versions of the client truncated the 64-bit GlobalConnID to 32-bit.
 func ParseGlobalConnID(id uint64) (g GlobalConnID, isTruncated bool, err error) {
 	if id&0x80000000_00000000 > 0 {
-		return GlobalConnID{}, false, errors.New("Unexpected connectionID excceeds int64")
+		return GlobalConnID{}, false, errors.New("unexpected connectionID excceeds int64")
 	}
 	if id&0x1 > 0 {
 		if id&0xffffffff_00000000 == 0 {

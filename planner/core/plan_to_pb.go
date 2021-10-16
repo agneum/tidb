@@ -16,6 +16,8 @@ package core
 
 import (
 	"github.com/pingcap/errors"
+	"github.com/pingcap/tipb/go-tipb"
+
 	"github.com/pingcap/tidb/distsql"
 	"github.com/pingcap/tidb/expression"
 	"github.com/pingcap/tidb/expression/aggregation"
@@ -28,7 +30,6 @@ import (
 	"github.com/pingcap/tidb/util"
 	"github.com/pingcap/tidb/util/codec"
 	"github.com/pingcap/tidb/util/ranger"
-	"github.com/pingcap/tipb/go-tipb"
 )
 
 // ToPB implements PhysicalPlan ToPB interface.
@@ -176,17 +177,17 @@ func (p *PhysicalLimit) ToPB(ctx sessionctx.Context, storeType kv.StoreType) (*t
 }
 
 // ToPB implements PhysicalPlan ToPB interface.
-func (p *PhysicalTableScan) ToPB(ctx sessionctx.Context, storeType kv.StoreType) (*tipb.Executor, error) {
-	tsExec := tables.BuildTableScanFromInfos(p.Table, p.Columns)
-	tsExec.Desc = p.Desc
-	if p.isPartition {
-		tsExec.TableId = p.physicalTableID
+func (ts *PhysicalTableScan) ToPB(ctx sessionctx.Context, storeType kv.StoreType) (*tipb.Executor, error) {
+	tsExec := tables.BuildTableScanFromInfos(ts.Table, ts.Columns)
+	tsExec.Desc = ts.Desc
+	if ts.isPartition {
+		tsExec.TableId = ts.physicalTableID
 	}
 	executorID := ""
-	if storeType == kv.TiFlash && p.IsGlobalRead {
+	if storeType == kv.TiFlash && ts.IsGlobalRead {
 		tsExec.NextReadEngine = tipb.EngineType_TiFlash
-		splitedRanges, _ := distsql.SplitRangesAcrossInt64Boundary(p.Ranges, false, false, p.Table.IsCommonHandle)
-		ranges, err := distsql.TableHandleRangesToKVRanges(ctx.GetSessionVars().StmtCtx, []int64{tsExec.TableId}, p.Table.IsCommonHandle, splitedRanges, nil)
+		splitedRanges, _ := distsql.SplitRangesAcrossInt64Boundary(ts.Ranges, false, false, ts.Table.IsCommonHandle)
+		ranges, err := distsql.TableHandleRangesToKVRanges(ctx.GetSessionVars().StmtCtx, []int64{tsExec.TableId}, ts.Table.IsCommonHandle, splitedRanges, nil)
 		if err != nil {
 			return nil, err
 		}
@@ -195,9 +196,9 @@ func (p *PhysicalTableScan) ToPB(ctx sessionctx.Context, storeType kv.StoreType)
 		}
 	}
 	if storeType == kv.TiFlash {
-		executorID = p.ExplainID().String()
+		executorID = ts.ExplainID().String()
 	}
-	err := SetPBColumnsDefaultValue(ctx, tsExec.Columns, p.Columns)
+	err := SetPBColumnsDefaultValue(ctx, tsExec.Columns, ts.Columns)
 	return &tipb.Executor{Tp: tipb.ExecType_TypeTableScan, TblScan: tsExec, ExecutorId: &executorID}, err
 }
 
@@ -227,15 +228,15 @@ func FindColumnInfoByID(colInfos []*model.ColumnInfo, id int64) *model.ColumnInf
 }
 
 // ToPB generates the pb structure.
-func (e *PhysicalExchangeSender) ToPB(ctx sessionctx.Context, storeType kv.StoreType) (*tipb.Executor, error) {
-	child, err := e.Children()[0].ToPB(ctx, kv.TiFlash)
+func (p *PhysicalExchangeSender) ToPB(ctx sessionctx.Context, storeType kv.StoreType) (*tipb.Executor, error) {
+	child, err := p.Children()[0].ToPB(ctx, kv.TiFlash)
 	if err != nil {
 		return nil, errors.Trace(err)
 	}
 
-	encodedTask := make([][]byte, 0, len(e.TargetTasks))
+	encodedTask := make([][]byte, 0, len(p.TargetTasks))
 
-	for _, task := range e.TargetTasks {
+	for _, task := range p.TargetTasks {
 		encodedStr, err := task.ToPB().Marshal()
 		if err != nil {
 			return nil, errors.Trace(err)
@@ -243,9 +244,9 @@ func (e *PhysicalExchangeSender) ToPB(ctx sessionctx.Context, storeType kv.Store
 		encodedTask = append(encodedTask, encodedStr)
 	}
 
-	hashCols := make([]expression.Expression, 0, len(e.HashCols))
-	types := make([]*tipb.FieldType, 0, len(e.HashCols))
-	for _, col := range e.HashCols {
+	hashCols := make([]expression.Expression, 0, len(p.HashCols))
+	types := make([]*tipb.FieldType, 0, len(p.HashCols))
+	for _, col := range p.HashCols {
 		hashCols = append(hashCols, col.Col)
 		tp := expression.ToPBFieldType(col.Col.RetType)
 		tp.Collate = col.CollateID
@@ -256,13 +257,13 @@ func (e *PhysicalExchangeSender) ToPB(ctx sessionctx.Context, storeType kv.Store
 		return nil, errors.Trace(err)
 	}
 	ecExec := &tipb.ExchangeSender{
-		Tp:              e.ExchangeType,
+		Tp:              p.ExchangeType,
 		EncodedTaskMeta: encodedTask,
 		PartitionKeys:   hashColPb,
 		Child:           child,
 		Types:           types,
 	}
-	executorID := e.ExplainID().String()
+	executorID := p.ExplainID().String()
 	return &tipb.Executor{
 		Tp:             tipb.ExecType_TypeExchangeSender,
 		ExchangeSender: ecExec,
@@ -271,10 +272,10 @@ func (e *PhysicalExchangeSender) ToPB(ctx sessionctx.Context, storeType kv.Store
 }
 
 // ToPB generates the pb structure.
-func (e *PhysicalExchangeReceiver) ToPB(ctx sessionctx.Context, storeType kv.StoreType) (*tipb.Executor, error) {
-	encodedTask := make([][]byte, 0, len(e.Tasks))
+func (p *PhysicalExchangeReceiver) ToPB(ctx sessionctx.Context, storeType kv.StoreType) (*tipb.Executor, error) {
+	encodedTask := make([][]byte, 0, len(p.Tasks))
 
-	for _, task := range e.Tasks {
+	for _, task := range p.Tasks {
 		encodedStr, err := task.ToPB().Marshal()
 		if err != nil {
 			return nil, errors.Trace(err)
@@ -282,8 +283,8 @@ func (e *PhysicalExchangeReceiver) ToPB(ctx sessionctx.Context, storeType kv.Sto
 		encodedTask = append(encodedTask, encodedStr)
 	}
 
-	fieldTypes := make([]*tipb.FieldType, 0, len(e.Schema().Columns))
-	for _, column := range e.Schema().Columns {
+	fieldTypes := make([]*tipb.FieldType, 0, len(p.Schema().Columns))
+	for _, column := range p.Schema().Columns {
 		pbType := expression.ToPBFieldType(column.RetType)
 		fieldTypes = append(fieldTypes, pbType)
 	}
@@ -291,7 +292,7 @@ func (e *PhysicalExchangeReceiver) ToPB(ctx sessionctx.Context, storeType kv.Sto
 		EncodedTaskMeta: encodedTask,
 		FieldTypes:      fieldTypes,
 	}
-	executorID := e.ExplainID().String()
+	executorID := p.ExplainID().String()
 	return &tipb.Executor{
 		Tp:               tipb.ExecType_TypeExchangeReceiver,
 		ExchangeReceiver: ecExec,
@@ -300,10 +301,10 @@ func (e *PhysicalExchangeReceiver) ToPB(ctx sessionctx.Context, storeType kv.Sto
 }
 
 // ToPB implements PhysicalPlan ToPB interface.
-func (p *PhysicalIndexScan) ToPB(ctx sessionctx.Context, _ kv.StoreType) (*tipb.Executor, error) {
-	columns := make([]*model.ColumnInfo, 0, p.schema.Len())
-	tableColumns := p.Table.Cols()
-	for _, col := range p.schema.Columns {
+func (is *PhysicalIndexScan) ToPB(ctx sessionctx.Context, _ kv.StoreType) (*tipb.Executor, error) {
+	columns := make([]*model.ColumnInfo, 0, is.schema.Len())
+	tableColumns := is.Table.Cols()
+	for _, col := range is.schema.Columns {
 		if col.ID == model.ExtraHandleID {
 			columns = append(columns, model.NewExtraHandleColInfo())
 		} else if col.ID == model.ExtraPidColID {
@@ -313,20 +314,20 @@ func (p *PhysicalIndexScan) ToPB(ctx sessionctx.Context, _ kv.StoreType) (*tipb.
 		}
 	}
 	var pkColIds []int64
-	if p.NeedCommonHandle {
-		pkColIds = tables.TryGetCommonPkColumnIds(p.Table)
+	if is.NeedCommonHandle {
+		pkColIds = tables.TryGetCommonPkColumnIds(is.Table)
 	}
 	idxExec := &tipb.IndexScan{
-		TableId:          p.Table.ID,
-		IndexId:          p.Index.ID,
-		Columns:          util.ColumnsToProto(columns, p.Table.PKIsHandle),
-		Desc:             p.Desc,
+		TableId:          is.Table.ID,
+		IndexId:          is.Index.ID,
+		Columns:          util.ColumnsToProto(columns, is.Table.PKIsHandle),
+		Desc:             is.Desc,
 		PrimaryColumnIds: pkColIds,
 	}
-	if p.isPartition {
-		idxExec.TableId = p.physicalTableID
+	if is.isPartition {
+		idxExec.TableId = is.physicalTableID
 	}
-	unique := checkCoverIndex(p.Index, p.Ranges)
+	unique := checkCoverIndex(is.Index, is.Ranges)
 	idxExec.Unique = &unique
 	return &tipb.Executor{Tp: tipb.ExecType_TypeIndexScan, IdxScan: idxExec}, nil
 }

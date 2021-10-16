@@ -32,6 +32,8 @@ import (
 
 	"github.com/pingcap/errors"
 	"github.com/pingcap/failpoint"
+	"go.uber.org/zap"
+
 	"github.com/pingcap/tidb/infoschema"
 	"github.com/pingcap/tidb/parser/auth"
 	"github.com/pingcap/tidb/parser/model"
@@ -49,7 +51,6 @@ import (
 	"github.com/pingcap/tidb/util/logutil"
 	"github.com/pingcap/tidb/util/memory"
 	"github.com/pingcap/tidb/util/plancodec"
-	"go.uber.org/zap"
 )
 
 // ParseSlowLogBatchSize is the batch size of slow-log lines for a worker to parse, exported for testing.
@@ -628,7 +629,7 @@ func (e *slowQueryRetriever) setColumnValue(sctx sessionctx.Context, row []types
 	}
 	valid, err := factory(row, value, tz, checker)
 	if err != nil {
-		err = fmt.Errorf("Parse slow log at line %v, failed field is %v, failed value is %v, error is %v", lineNum, field, value, err)
+		err = fmt.Errorf("parse slow log at line %v, failed field is %v, failed value is %v, error is %v", lineNum, field, value, err)
 		sctx.GetSessionVars().StmtCtx.AppendWarning(err)
 		return true
 	}

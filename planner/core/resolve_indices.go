@@ -636,12 +636,12 @@ func (p *Insert) ResolveIndices() (err error) {
 	return
 }
 
-func (p *physicalSchemaProducer) ResolveIndices() (err error) {
-	err = p.basePhysicalPlan.ResolveIndices()
+func (s *physicalSchemaProducer) ResolveIndices() (err error) {
+	err = s.basePhysicalPlan.ResolveIndices()
 	return err
 }
 
-func (p *baseSchemaProducer) ResolveIndices() (err error) {
+func (s *baseSchemaProducer) ResolveIndices() (err error) {
 	return
 }
 
